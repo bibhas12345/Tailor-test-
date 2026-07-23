@@ -431,14 +431,14 @@ export const AdminPanel: React.FC = () => {
       features: ['100% Handcrafted by Pal Tailors'],
       inStock: true,
       isSoldOut: false,
-      displayOrder: products.length + 1,
+      displayOrder: 1,
     });
     setProductImagePreview('https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80');
     setIsAddingProduct(true);
   };
 
   // Save Product
-  const handleSaveProduct = (e: React.FormEvent) => {
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!productForm.title || !productForm.price) {
       alert(t('Please enter at least Title and Price', 'শিরোনাম এবং মূল্য লিখুন'));
@@ -476,17 +476,23 @@ export const AdminPanel: React.FC = () => {
       features: productForm.features || ['Handcrafted by Pal Tailors'],
       inStock: !productForm.isSoldOut,
       isSoldOut: !!productForm.isSoldOut,
-      displayOrder: productForm.displayOrder ? Number(productForm.displayOrder) : products.length + 1,
+      displayOrder: productForm.displayOrder ? Number(productForm.displayOrder) : 1,
     };
 
-    if (isAddingProduct) {
-      addProduct(finalProduct);
-    } else {
-      updateProduct(finalProduct);
+    try {
+      if (isAddingProduct) {
+        await addProduct(finalProduct);
+        alert(t('Product added successfully!', 'পণ্যটি সফলভাবে যোগ করা হয়েছে!'));
+      } else {
+        await updateProduct(finalProduct);
+        alert(t('Product updated successfully!', 'পণ্যটি সফলভাবে আপডেট করা হয়েছে!'));
+      }
+      setIsAddingProduct(false);
+      setEditingProduct(null);
+    } catch (err) {
+      console.error('Failed to save product:', err);
+      alert(t('Failed to save product. Please try again.', 'পণ্য সংরক্ষণে সমস্যা হয়েছে। আবার চেষ্টা করুন।'));
     }
-
-    setIsAddingProduct(false);
-    setEditingProduct(null);
   };
 
   // Open Edit Fabric Modal
@@ -518,14 +524,14 @@ export const AdminPanel: React.FC = () => {
       additionalImages: [],
       inStock: true,
       isSoldOut: false,
-      displayOrder: fabrics.length + 1,
+      displayOrder: 1,
     });
     setFabricImagePreview('https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&w=800&q=80');
     setIsAddingFabric(true);
   };
 
   // Save Fabric
-  const handleSaveFabric = (e: React.FormEvent) => {
+  const handleSaveFabric = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fabricForm.name || !fabricForm.material) {
       alert(t('Please enter at least Fabric Name and Material', 'কাপড়ের নাম এবং উপাদান লিখুন'));
@@ -553,17 +559,23 @@ export const AdminPanel: React.FC = () => {
       additionalImages: cleanAdditional,
       inStock: !fabricForm.isSoldOut,
       isSoldOut: !!fabricForm.isSoldOut,
-      displayOrder: fabricForm.displayOrder ? Number(fabricForm.displayOrder) : fabrics.length + 1,
+      displayOrder: fabricForm.displayOrder ? Number(fabricForm.displayOrder) : 1,
     };
 
-    if (isAddingFabric) {
-      addFabric(finalFabric);
-    } else {
-      updateFabric(finalFabric);
+    try {
+      if (isAddingFabric) {
+        await addFabric(finalFabric);
+        alert(t('Fabric added successfully!', 'ফেব্রিকটি সফলভাবে যোগ করা হয়েছে!'));
+      } else {
+        await updateFabric(finalFabric);
+        alert(t('Fabric updated successfully!', 'ফেব্রিকটি সফলভাবে আপডেট করা হয়েছে!'));
+      }
+      setIsAddingFabric(false);
+      setEditingFabric(null);
+    } catch (err) {
+      console.error('Failed to save fabric:', err);
+      alert(t('Failed to save fabric. Please try again.', 'ফেব্রিক সংরক্ষণে সমস্যা হয়েছে। আবার চেষ্টা করুন।'));
     }
-
-    setIsAddingFabric(false);
-    setEditingFabric(null);
   };
 
   // IF NOT LOGGED IN SHOW LOGIN SCREEN
@@ -911,9 +923,14 @@ export const AdminPanel: React.FC = () => {
                             </button>
 
                             <button
-                              onClick={() => {
+                              onClick={async () => {
                                 if (confirm(t('Are you sure you want to delete this product?', 'এই পোশাকটি ডিলিট করতে চান?'))) {
-                                  deleteProduct(prod.id);
+                                  try {
+                                    await deleteProduct(prod.id);
+                                    alert(t('Product deleted successfully!', 'পণ্যটি সফলভাবে মুছে ফেলা হয়েছে!'));
+                                  } catch (e) {
+                                    alert(t('Failed to delete product.', 'পণ্য মুছতে সমস্যা হয়েছে।'));
+                                  }
                                 }
                               }}
                               className="p-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 font-bold transition"
@@ -1080,9 +1097,14 @@ export const AdminPanel: React.FC = () => {
                             </button>
 
                             <button
-                              onClick={() => {
+                              onClick={async () => {
                                 if (confirm(t('Are you sure you want to delete this fabric?', 'এই ফ্যাব্রিকটি ডিলিট করতে চান?'))) {
-                                  deleteFabric(fab.id);
+                                  try {
+                                    await deleteFabric(fab.id);
+                                    alert(t('Fabric deleted successfully!', 'ফেব্রিকটি সফলভাবে মুছে ফেলা হয়েছে!'));
+                                  } catch (e) {
+                                    alert(t('Failed to delete fabric.', 'ফেব্রিক মুছতে সমস্যা হয়েছে।'));
+                                  }
                                 }
                               }}
                               className="p-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 font-bold transition"

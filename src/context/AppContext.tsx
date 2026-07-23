@@ -28,16 +28,16 @@ interface AppContextType {
   // Products & Fabrics catalog state
   products: Product[];
   fabrics: Fabric[];
-  updateProduct: (updated: Product) => void;
-  addProduct: (newProd: Product) => void;
-  deleteProduct: (id: string) => void;
-  toggleProductSoldOut: (id: string) => void;
+  updateProduct: (updated: Product) => Promise<void>;
+  addProduct: (newProd: Product) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
+  toggleProductSoldOut: (id: string) => Promise<void>;
 
-  updateFabric: (updated: Fabric) => void;
-  addFabric: (newFab: Fabric) => void;
-  deleteFabric: (id: string) => void;
-  toggleFabricSoldOut: (id: string) => void;
-  resetCatalogToDefaults: () => void;
+  updateFabric: (updated: Fabric) => Promise<void>;
+  addFabric: (newFab: Fabric) => Promise<void>;
+  deleteFabric: (id: string) => Promise<void>;
+  toggleFabricSoldOut: (id: string) => Promise<void>;
+  resetCatalogToDefaults: () => Promise<void>;
 
   // Admin Auth
   isAdminLoggedIn: boolean;
@@ -196,6 +196,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await setDoc(doc(db, 'settings', 'homepage'), updated, { merge: true });
   };
 
+// Helper to strip undefined values so Firestore setDoc / updateDoc never fail
+function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<string, any> {
+  const clean: Record<string, any> = {};
+  Object.keys(obj).forEach((key) => {
+    if (obj[key] !== undefined) {
+      if (Array.isArray(obj[key])) {
+        clean[key] = obj[key].map((item: any) =>
+          item !== null && typeof item === 'object' ? sanitizeFirestoreData(item) : item
+        );
+      } else if (obj[key] !== null && typeof obj[key] === 'object') {
+        clean[key] = sanitizeFirestoreData(obj[key]);
+      } else {
+        clean[key] = obj[key];
+      }
+    }
+  });
+  return clean;
+}
+
   // Subscribe to Products collection in Firestore
   useEffect(() => {
     const productsRef = collection(db, 'products');
@@ -203,7 +222,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (snapshot.empty) {
         // Seed initial products to Firestore
         PRODUCTS_DATA.forEach((prod) => {
-          setDoc(doc(db, 'products', prod.id), prod).catch((err) =>
+          const cleanProd = sanitizeFirestoreData(prod);
+          setDoc(doc(db, 'products', prod.id), cleanProd).catch((err) =>
             console.error('Error seeding product:', err)
           );
         });
@@ -232,7 +252,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (snapshot.empty) {
         // Seed initial fabrics to Firestore
         FABRICS_DATA.forEach((fab) => {
-          setDoc(doc(db, 'fabrics', fab.id), fab).catch((err) =>
+          const cleanFab = sanitizeFirestoreData(fab);
+          setDoc(doc(db, 'fabrics', fab.id), cleanFab).catch((err) =>
             console.error('Error seeding fabric:', err)
           );
         });
@@ -270,28 +291,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Product CRUD via Firestore
-  const updateProduct = (updated: Product) => {
+  const updateProduct = async (updated: Product) => {
+    const clean = sanitizeFirestoreData(updated);
     setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-    setDoc(doc(db, 'products', updated.id), updated, { merge: true }).catch((err) =>
-      console.error('Failed to update product in Firestore:', err)
-    );
+    await setDoc(doc(db, 'products', updated.id), clean, { merge: true });
   };
 
-  const addProduct = (newProd: Product) => {
+  const addProduct = async (newProd: Product) => {
+    const clean = sanitizeFirestoreData(newProd);
     setProducts((prev) => [newProd, ...prev]);
-    setDoc(doc(db, 'products', newProd.id), newProd).catch((err) =>
-      console.error('Failed to add product to Firestore:', err)
-    );
+    await setDoc(doc(db, 'products', newProd.id), clean);
   };
 
-  const deleteProduct = (id: string) => {
+  const deleteProduct = async (id: string) => {
     setProducts((prev) => prev.filter((p) => p.id !== id));
-    deleteDoc(doc(db, 'products', id)).catch((err) =>
-      console.error('Failed to delete product from Firestore:', err)
-    );
+    await deleteDoc(doc(db, 'products', id));
   };
 
-  const toggleProductSoldOut = (id: string) => {
+  const toggleProductSoldOut = async (id: string) => {
     const prod = products.find((p) => p.id === id);
     if (!prod) return;
     const nextIsSoldOut = !prod.isSoldOut;
@@ -302,34 +319,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProducts((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...updatedFields } : p))
     );
-    updateDoc(doc(db, 'products', id), updatedFields).catch((err) =>
-      console.error('Failed to toggle product sold out in Firestore:', err)
-    );
+    await updateDoc(doc(db, 'products', id), updatedFields);
   };
 
   // Fabric CRUD via Firestore
-  const updateFabric = (updated: Fabric) => {
+  const updateFabric = async (updated: Fabric) => {
+    const clean = sanitizeFirestoreData(updated);
     setFabrics((prev) => prev.map((f) => (f.id === updated.id ? updated : f)));
-    setDoc(doc(db, 'fabrics', updated.id), updated, { merge: true }).catch((err) =>
-      console.error('Failed to update fabric in Firestore:', err)
-    );
+    await setDoc(doc(db, 'fabrics', updated.id), clean, { merge: true });
   };
 
-  const addFabric = (newFab: Fabric) => {
+  const addFabric = async (newFab: Fabric) => {
+    const clean = sanitizeFirestoreData(newFab);
     setFabrics((prev) => [newFab, ...prev]);
-    setDoc(doc(db, 'fabrics', newFab.id), newFab).catch((err) =>
-      console.error('Failed to add fabric to Firestore:', err)
-    );
+    await setDoc(doc(db, 'fabrics', newFab.id), clean);
   };
 
-  const deleteFabric = (id: string) => {
+  const deleteFabric = async (id: string) => {
     setFabrics((prev) => prev.filter((f) => f.id !== id));
-    deleteDoc(doc(db, 'fabrics', id)).catch((err) =>
-      console.error('Failed to delete fabric from Firestore:', err)
-    );
+    await deleteDoc(doc(db, 'fabrics', id));
   };
 
-  const toggleFabricSoldOut = (id: string) => {
+  const toggleFabricSoldOut = async (id: string) => {
     const fab = fabrics.find((f) => f.id === id);
     if (!fab) return;
     const nextIsSoldOut = !fab.isSoldOut;
@@ -340,9 +351,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setFabrics((prev) =>
       prev.map((f) => (f.id === id ? { ...f, ...updatedFields } : f))
     );
-    updateDoc(doc(db, 'fabrics', id), updatedFields).catch((err) =>
-      console.error('Failed to toggle fabric sold out in Firestore:', err)
-    );
+    await updateDoc(doc(db, 'fabrics', id), updatedFields);
   };
 
   const resetCatalogToDefaults = async () => {
