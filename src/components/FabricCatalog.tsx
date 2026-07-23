@@ -147,25 +147,25 @@ const FabricCard: React.FC<{ fabric: Fabric }> = ({ fabric }) => {
               disabled
               className="w-full py-2 px-2 sm:py-2.5 sm:px-3 rounded-xl bg-stone-300 dark:bg-stone-800 text-stone-500 dark:text-stone-400 font-bold text-[10px] sm:text-xs cursor-not-allowed flex items-center justify-center gap-1"
             >
-              <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-stone-400" />
+              <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-stone-400 flex-shrink-0" />
               <span>{t('Sold Out', 'স্টকে নেই')}</span>
             </button>
           ) : (
             <>
               <button
                 onClick={handleCustomOrder}
-                className="flex-1 py-2 px-2 sm:py-2.5 sm:px-3 rounded-xl bg-[#3D2E28] hover:bg-[#2A1E1A] dark:bg-[#F3EDE2] dark:hover:bg-white text-white dark:text-[#2C221E] font-bold text-[10px] sm:text-xs shadow-md shadow-[#3D2E28]/10 flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer"
+                className="flex-1 min-w-0 py-2 px-1.5 sm:py-2.5 sm:px-3 rounded-xl bg-[#3D2E28] hover:bg-[#2A1E1A] dark:bg-[#F3EDE2] dark:hover:bg-white text-white dark:text-[#2C221E] font-bold text-[10px] sm:text-xs shadow-md shadow-[#3D2E28]/10 flex items-center justify-center gap-1 sm:gap-1.5 transition active:scale-95 cursor-pointer"
               >
                 <CalendarCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#E8DDD0] dark:text-[#2C221E] flex-shrink-0" />
-                <span className="truncate">{t('Book / Customise', 'বুক বা কাস্টমাইজ')}</span>
+                <span className="truncate whitespace-nowrap">{t('Book / Customise', 'বুক বা কাস্টমাইজ')}</span>
               </button>
 
               <button
                 onClick={handleDirectWhatsApp}
                 title={t('Order Fabric via WhatsApp', 'হোয়াটসঅ্যাপে বুকিং')}
-                className="p-2 sm:p-2.5 rounded-xl bg-[#FFFDF9] dark:bg-[#221A17] hover:bg-[#F2ECE4] dark:hover:bg-[#2D221D] text-[#3D2E28] dark:text-[#E8DDD0] border border-[#D8C7B5] dark:border-[#42342C] transition active:scale-95 shadow-xs flex-shrink-0 cursor-pointer"
+                className="p-2 sm:p-2.5 rounded-xl bg-[#FFFDF9] dark:bg-[#221A17] hover:bg-[#F2ECE4] dark:hover:bg-[#2D221D] text-[#3D2E28] dark:text-[#E8DDD0] border border-[#D8C7B5] dark:border-[#42342C] transition active:scale-95 shadow-xs flex-shrink-0 flex items-center justify-center cursor-pointer"
               >
-                <PhoneCall className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <PhoneCall className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
               </button>
             </>
           )}
