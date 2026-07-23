@@ -203,10 +203,6 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
               )}
             </div>
           </div>
-
-          <p className="text-[11px] sm:text-xs text-[#6E5D53] dark:text-[#C5B8AC] line-clamp-2 leading-relaxed">
-            {t(product.description, product.bengaliDescription)}
-          </p>
         </div>
 
         {/* Action Buttons */}

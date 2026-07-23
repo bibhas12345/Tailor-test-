@@ -118,29 +118,26 @@ const FabricCard: React.FC<{ fabric: Fabric }> = ({ fabric }) => {
         
         <div className="space-y-1.5 sm:space-y-2">
           <div className="flex items-start justify-between gap-2">
-            <h3
-              className={`font-serif text-sm sm:text-lg font-bold leading-tight ${
-                isSoldOut
-                  ? 'text-stone-500 dark:text-stone-400 line-through'
-                  : 'text-[#2C221E] dark:text-[#F5EFE8]'
-              }`}
-            >
-              {t(fabric.name, fabric.bengaliName)}
-            </h3>
+            <div>
+              <h3
+                className={`font-serif text-sm sm:text-lg font-bold leading-tight ${
+                  isSoldOut
+                    ? 'text-stone-500 dark:text-stone-400 line-through'
+                    : 'text-[#2C221E] dark:text-[#F5EFE8]'
+                }`}
+              >
+                {t(fabric.name, fabric.bengaliName)}
+              </h3>
+              <p className="text-[11px] sm:text-xs font-bold text-[#6E5D53] dark:text-[#C5B8AC]">
+                {t(`Fabric: ${fabric.material}`, `কাপড়: ${fabric.material}`)}
+              </p>
+            </div>
             
             {/* Price Badge */}
-            <span className="px-2.5 py-1 rounded-lg bg-[#EFE7DC] dark:bg-[#2A1E1A] text-[#801921] dark:text-amber-300 font-extrabold text-xs sm:text-sm whitespace-nowrap border border-[#D8C7B5] dark:border-[#4A202A]">
+            <span className="px-2.5 py-1 rounded-lg bg-[#EFE7DC] dark:bg-[#2A1E1A] text-[#801921] dark:text-amber-300 font-extrabold text-xs sm:text-sm whitespace-nowrap border border-[#D8C7B5] dark:border-[#4A202A] flex-shrink-0">
               ₹{fabric.pricePerMeter || 500}
             </span>
           </div>
-
-          <p className="text-[11px] sm:text-xs font-bold text-[#6E5D53] dark:text-[#C5B8AC]">
-            {t(`Material: ${fabric.material}`, `উপাদান: ${fabric.material}`)}
-          </p>
-
-          <p className="text-[11px] sm:text-xs text-[#6E5D53] dark:text-[#C5B8AC] leading-relaxed line-clamp-2">
-            {fabric.description}
-          </p>
         </div>
 
         {/* Action Buttons */}
