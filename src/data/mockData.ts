@@ -65,6 +65,7 @@ export const PRODUCTS_DATA: Product[] = [
     bengaliDescription: 'নরম ও আরামদায়ক ১০০% অ্যালপাইন কটন নাইটি। সুন্দর ফ্লোরাল প্রিন্ট ও নিখুঁত সেলাই।',
     features: ['100% Soft Alpine Cotton', 'Breathable & Non-Shrinking', 'Convenient Front Pocket', 'Color Fast Dyeing'],
     inStock: true,
+    displayOrder: 1,
   },
   {
     id: 'PB-0002',
@@ -85,6 +86,7 @@ export const PRODUCTS_DATA: Product[] = [
     bengaliDescription: 'শান্তিনিকেতনের খাঁটি হাতে সেলাই করা কাঁথা স্টিচ কুর্তি প্লাজো এবং ওড়না সেট।',
     features: ['100% Organic Handloom Cotton', 'Authentic Santiniketan Motifs', 'Side Slit Fit', 'Color Fast Dyeing'],
     inStock: true,
+    displayOrder: 2,
   },
   {
     id: 'PB-0003',
@@ -105,6 +107,7 @@ export const PRODUCTS_DATA: Product[] = [
     bengaliDescription: 'জামদানী ও সিল্ক শাড়ির জন্য রাজকীয় সিল্ক ও জারদৌসি কাজের ট্র্যাডিশনাল ব্লাউজ।',
     features: ['Padded Comfort Fit', 'Latkan Tassels Included', 'Hand Embroidered Borders', 'Custom Alteration Ready'],
     inStock: true,
+    displayOrder: 3,
   },
   {
     id: 'PB-0004',
@@ -125,6 +128,7 @@ export const PRODUCTS_DATA: Product[] = [
     bengaliDescription: '১০০% পিওর কটন ডাবল বেড শিট সাথে ২ টি রিম্যাচিং বালিশের কভার। দীর্ঘস্থায়ী রঙ ও প্রিমিয়াম ফিনিশ।',
     features: ['210 Thread Count High Density Cotton', 'Includes 2 Zipped Pillow Covers', 'Shrink Proof & Fast Color', 'Machine Washable'],
     inStock: true,
+    displayOrder: 4,
   },
   {
     id: 'PB-0005',
@@ -145,6 +149,7 @@ export const PRODUCTS_DATA: Product[] = [
     bengaliDescription: 'উৎসবের পোশাকের সাথে ব্যবহারের জন্য চমৎকার স্বর্ণালী জারির পাড়ওয়ালা শিফন ওড়না।',
     features: ['Featherlight Soft Chiffon', 'Lustrous Gold Zari Border', 'Multi-Occasion Wear', 'Easy Maintenance'],
     inStock: true,
+    displayOrder: 5,
   },
   {
     id: 'PB-0006',
@@ -165,6 +170,7 @@ export const PRODUCTS_DATA: Product[] = [
     bengaliDescription: 'হাতে বোনা জামদানী কাজের ঐতিহ্যবাহী আনারকলি ড্রেস। যেকোনো উৎসবে পরার মতো মনোমুগ্ধকর রূপ।',
     features: ['Pure Woven Jamdani Work', 'Comfort Cotton Lining', 'Ankle Length Flair', 'Includes Churidar Bottom'],
     inStock: true,
+    displayOrder: 6,
   }
 ];
 
@@ -182,6 +188,7 @@ export const FABRICS_DATA: Fabric[] = [
     origin: 'Murshidabad, West Bengal',
     inStock: true,
     minMeters: 1.5,
+    displayOrder: 1,
   },
   {
     id: 'FB-0002',
@@ -196,6 +203,7 @@ export const FABRICS_DATA: Fabric[] = [
     origin: 'Birbhum / Santiniketan',
     inStock: true,
     minMeters: 2.0,
+    displayOrder: 2,
   },
   {
     id: 'FB-0003',
@@ -210,6 +218,7 @@ export const FABRICS_DATA: Fabric[] = [
     origin: 'Varanasi Weavers',
     inStock: true,
     minMeters: 1.0,
+    displayOrder: 3,
   },
   {
     id: 'FB-0004',
@@ -224,6 +233,7 @@ export const FABRICS_DATA: Fabric[] = [
     origin: 'Nadia / Dhaka Style',
     inStock: true,
     minMeters: 1.0,
+    displayOrder: 4,
   },
   {
     id: 'FB-0005',
@@ -238,6 +248,7 @@ export const FABRICS_DATA: Fabric[] = [
     origin: 'Bankura / Purulia',
     inStock: true,
     minMeters: 1.5,
+    displayOrder: 5,
   },
   {
     id: 'FB-0006',
@@ -252,6 +263,7 @@ export const FABRICS_DATA: Fabric[] = [
     origin: 'Imported Suiting',
     inStock: true,
     minMeters: 2.0,
+    displayOrder: 6,
   }
 ];
 

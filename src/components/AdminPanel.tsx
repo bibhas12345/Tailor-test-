@@ -411,6 +411,7 @@ export const AdminPanel: React.FC = () => {
   // Open Add Product Modal
   const openAddProductModal = () => {
     const newId = generateUniqueProductId();
+    const nextOrder = products.length > 0 ? Math.max(...products.map((p) => Number(p.displayOrder) || 0)) + 1 : 1;
     setEditingProduct(null);
     setProductForm({
       id: newId,
@@ -431,7 +432,7 @@ export const AdminPanel: React.FC = () => {
       features: ['100% Handcrafted by Pal Tailors'],
       inStock: true,
       isSoldOut: false,
-      displayOrder: 1,
+      displayOrder: nextOrder,
     });
     setProductImagePreview('https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80');
     setIsAddingProduct(true);
@@ -448,6 +449,10 @@ export const AdminPanel: React.FC = () => {
     const cleanAdditional = (productForm.additionalImages || [])
       .slice(0, 4)
       .filter((url): url is string => typeof url === 'string' && url.trim().length > 0);
+
+    const calculatedOrder = typeof productForm.displayOrder === 'number' && !isNaN(productForm.displayOrder) && productForm.displayOrder > 0
+      ? productForm.displayOrder
+      : (products.length > 0 ? Math.max(...products.map((p) => Number(p.displayOrder) || 0)) + 1 : 1);
 
     const finalProduct: Product = {
       id: productForm.id || generateUniqueProductId(),
@@ -476,7 +481,7 @@ export const AdminPanel: React.FC = () => {
       features: productForm.features || ['Handcrafted by Pal Tailors'],
       inStock: !productForm.isSoldOut,
       isSoldOut: !!productForm.isSoldOut,
-      displayOrder: productForm.displayOrder ? Number(productForm.displayOrder) : 1,
+      displayOrder: calculatedOrder,
     };
 
     try {
@@ -510,6 +515,7 @@ export const AdminPanel: React.FC = () => {
   // Open Add Fabric Modal
   const openAddFabricModal = () => {
     const newId = generateUniqueFabricId();
+    const nextOrder = fabrics.length > 0 ? Math.max(...fabrics.map((f) => Number(f.displayOrder) || 0)) + 1 : 1;
     setEditingFabric(null);
     setFabricForm({
       id: newId,
@@ -524,7 +530,7 @@ export const AdminPanel: React.FC = () => {
       additionalImages: [],
       inStock: true,
       isSoldOut: false,
-      displayOrder: 1,
+      displayOrder: nextOrder,
     });
     setFabricImagePreview('https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&w=800&q=80');
     setIsAddingFabric(true);
@@ -541,6 +547,10 @@ export const AdminPanel: React.FC = () => {
     const cleanAdditional = (fabricForm.additionalImages || [])
       .slice(0, 4)
       .filter((url): url is string => typeof url === 'string' && url.trim().length > 0);
+
+    const calculatedOrder = typeof fabricForm.displayOrder === 'number' && !isNaN(fabricForm.displayOrder) && fabricForm.displayOrder > 0
+      ? fabricForm.displayOrder
+      : (fabrics.length > 0 ? Math.max(...fabrics.map((f) => Number(f.displayOrder) || 0)) + 1 : 1);
 
     const finalFabric: Fabric = {
       id: fabricForm.id || generateUniqueFabricId(),
@@ -559,7 +569,7 @@ export const AdminPanel: React.FC = () => {
       additionalImages: cleanAdditional,
       inStock: !fabricForm.isSoldOut,
       isSoldOut: !!fabricForm.isSoldOut,
-      displayOrder: fabricForm.displayOrder ? Number(fabricForm.displayOrder) : 1,
+      displayOrder: calculatedOrder,
     };
 
     try {
@@ -883,7 +893,12 @@ export const AdminPanel: React.FC = () => {
                                 type="number"
                                 min="1"
                                 value={prod.displayOrder ?? (idx + 1)}
-                                onChange={(e) => updateProduct({ ...prod, displayOrder: Number(e.target.value) })}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value);
+                                  if (val > 0) {
+                                    updateProduct({ ...prod, displayOrder: val });
+                                  }
+                                }}
                                 className="w-16 px-2 py-1 rounded-lg border border-[#E5D8C8] dark:border-[#3D1B22] bg-[#FAF5EE] dark:bg-[#180C0F] text-center text-xs font-bold text-[#801921] dark:text-amber-300"
                               />
                             </div>
@@ -1058,7 +1073,12 @@ export const AdminPanel: React.FC = () => {
                                 type="number"
                                 min="1"
                                 value={fab.displayOrder ?? (idx + 1)}
-                                onChange={(e) => updateFabric({ ...fab, displayOrder: Number(e.target.value) })}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value);
+                                  if (val > 0) {
+                                    updateFabric({ ...fab, displayOrder: val });
+                                  }
+                                }}
                                 className="w-16 px-2 py-1 rounded-lg border border-[#E5D8C8] dark:border-[#3D1B22] bg-[#FAF5EE] dark:bg-[#180C0F] text-center text-xs font-bold text-[#801921] dark:text-amber-300"
                               />
                             </div>
@@ -1757,8 +1777,12 @@ export const AdminPanel: React.FC = () => {
                     <input
                       type="number"
                       min="1"
-                      value={productForm.displayOrder || 1}
-                      onChange={(e) => setProductForm({ ...productForm, displayOrder: Number(e.target.value) })}
+                      value={productForm.displayOrder === undefined || productForm.displayOrder === ('' as any) ? '' : productForm.displayOrder}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setProductForm({ ...productForm, displayOrder: val === '' ? ('' as any) : Number(val) });
+                      }}
+                      placeholder="e.g. 1, 2, 3"
                       className="w-full px-3 py-2 bg-[#FAF5EE] dark:bg-[#180C0F] border border-[#E5D8C8] dark:border-[#3D1B22] rounded-xl text-xs font-bold text-[#801921]"
                     />
                   </div>
@@ -2074,8 +2098,12 @@ export const AdminPanel: React.FC = () => {
                     <input
                       type="number"
                       min="1"
-                      value={fabricForm.displayOrder || 1}
-                      onChange={(e) => setFabricForm({ ...fabricForm, displayOrder: Number(e.target.value) })}
+                      value={fabricForm.displayOrder === undefined || fabricForm.displayOrder === ('' as any) ? '' : fabricForm.displayOrder}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFabricForm({ ...fabricForm, displayOrder: val === '' ? ('' as any) : Number(val) });
+                      }}
+                      placeholder="e.g. 1, 2, 3"
                       className="w-full px-3 py-2 bg-[#FAF5EE] dark:bg-[#180C0F] border border-[#E5D8C8] dark:border-[#3D1B22] rounded-xl text-xs font-bold text-[#801921]"
                     />
                   </div>

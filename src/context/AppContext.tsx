@@ -219,7 +219,17 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
   useEffect(() => {
     const productsRef = collection(db, 'products');
     const unsubscribe = onSnapshot(productsRef, (snapshot) => {
-      if (snapshot.empty) {
+      if (!snapshot.empty) {
+        const items: Product[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push({ ...docSnap.data(), id: docSnap.id } as Product);
+        });
+        items.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+        setProducts(items);
+        try {
+          localStorage.setItem('pal_tailors_products', JSON.stringify(items));
+        } catch (e) {}
+      } else {
         // Seed initial products to Firestore
         PRODUCTS_DATA.forEach((prod) => {
           const cleanProd = sanitizeFirestoreData(prod);
@@ -227,16 +237,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
             console.error('Error seeding product:', err)
           );
         });
-      } else {
-        const items: Product[] = [];
-        snapshot.forEach((docSnap) => {
-          items.push({ ...docSnap.data(), id: docSnap.id } as Product);
-        });
-        items.sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
-        setProducts(items);
-        try {
-          localStorage.setItem('pal_tailors_products', JSON.stringify(items));
-        } catch (e) {}
+        setProducts(PRODUCTS_DATA);
       }
     }, (error) => {
       console.error('Firestore products subscription error:', error);
@@ -249,7 +250,17 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
   useEffect(() => {
     const fabricsRef = collection(db, 'fabrics');
     const unsubscribe = onSnapshot(fabricsRef, (snapshot) => {
-      if (snapshot.empty) {
+      if (!snapshot.empty) {
+        const items: Fabric[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push({ ...docSnap.data(), id: docSnap.id } as Fabric);
+        });
+        items.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+        setFabrics(items);
+        try {
+          localStorage.setItem('pal_tailors_fabrics', JSON.stringify(items));
+        } catch (e) {}
+      } else {
         // Seed initial fabrics to Firestore
         FABRICS_DATA.forEach((fab) => {
           const cleanFab = sanitizeFirestoreData(fab);
@@ -257,16 +268,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
             console.error('Error seeding fabric:', err)
           );
         });
-      } else {
-        const items: Fabric[] = [];
-        snapshot.forEach((docSnap) => {
-          items.push({ ...docSnap.data(), id: docSnap.id } as Fabric);
-        });
-        items.sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
-        setFabrics(items);
-        try {
-          localStorage.setItem('pal_tailors_fabrics', JSON.stringify(items));
-        } catch (e) {}
+        setFabrics(FABRICS_DATA);
       }
     }, (error) => {
       console.error('Firestore fabrics subscription error:', error);
@@ -293,13 +295,21 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
   // Product CRUD via Firestore
   const updateProduct = async (updated: Product) => {
     const clean = sanitizeFirestoreData(updated);
-    setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    setProducts((prev) => {
+      const exists = prev.some((p) => p.id === updated.id);
+      const next = exists ? prev.map((p) => (p.id === updated.id ? updated : p)) : [updated, ...prev];
+      return next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+    });
     await setDoc(doc(db, 'products', updated.id), clean, { merge: true });
   };
 
   const addProduct = async (newProd: Product) => {
     const clean = sanitizeFirestoreData(newProd);
-    setProducts((prev) => [newProd, ...prev]);
+    setProducts((prev) => {
+      const filtered = prev.filter((p) => p.id !== newProd.id);
+      const next = [newProd, ...filtered];
+      return next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+    });
     await setDoc(doc(db, 'products', newProd.id), clean);
   };
 
@@ -325,13 +335,21 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
   // Fabric CRUD via Firestore
   const updateFabric = async (updated: Fabric) => {
     const clean = sanitizeFirestoreData(updated);
-    setFabrics((prev) => prev.map((f) => (f.id === updated.id ? updated : f)));
+    setFabrics((prev) => {
+      const exists = prev.some((f) => f.id === updated.id);
+      const next = exists ? prev.map((f) => (f.id === updated.id ? updated : f)) : [updated, ...prev];
+      return next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+    });
     await setDoc(doc(db, 'fabrics', updated.id), clean, { merge: true });
   };
 
   const addFabric = async (newFab: Fabric) => {
     const clean = sanitizeFirestoreData(newFab);
-    setFabrics((prev) => [newFab, ...prev]);
+    setFabrics((prev) => {
+      const filtered = prev.filter((f) => f.id !== newFab.id);
+      const next = [newFab, ...filtered];
+      return next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+    });
     await setDoc(doc(db, 'fabrics', newFab.id), clean);
   };
 
