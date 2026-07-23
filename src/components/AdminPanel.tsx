@@ -44,7 +44,6 @@ export const AdminPanel: React.FC = () => {
     addFabric,
     deleteFabric,
     toggleFabricSoldOut,
-    resetCatalogToDefaults,
     isAdminLoggedIn,
     adminLogin,
     adminLogout,
@@ -663,19 +662,6 @@ export const AdminPanel: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => {
-                if (confirm(t('Reset catalog to initial default list?', 'ক্যাটালগ রিসেট করতে চান?'))) {
-                  resetCatalogToDefaults();
-                }
-              }}
-              className="px-3.5 py-2 rounded-xl bg-[#F3E9DD] hover:bg-[#EBE0D2] dark:bg-[#2A141A] dark:hover:bg-[#3D1E26] text-[#801921] dark:text-[#F4D6DC] border border-[#E5D8C8] dark:border-[#4A202A] text-xs font-bold transition flex items-center gap-1.5"
-              title={t('Reset Catalog', 'ক্যাটালগ রিসেট')}
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>{t('Reset Catalog', 'ক্যাটালগ রিসেট')}</span>
-            </button>
-
-            <button
               onClick={adminLogout}
               className="px-4 py-2 rounded-xl bg-rose-800 hover:bg-rose-900 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5"
             >
@@ -874,7 +860,7 @@ export const AdminPanel: React.FC = () => {
                           <div className="text-xs text-[#63483E] dark:text-[#D8C3B8] space-y-1">
                             <p>
                               <span className="font-bold">{t('Category:', 'ক্যাটাগরি:')}</span>{' '}
-                              <span className="capitalize">{prod.category}</span> ({prod.subCategory})
+                              <span className="capitalize">{prod.category === 'traditional' ? t('Traditional (Man/Woman)', 'ট্র্যাডিশনাল (পুরুষ/মহিলা)') : prod.category}</span> ({prod.subCategory})
                             </p>
                             <p>
                               <span className="font-bold">{t('Fabric:', 'ফ্যাব্রিক:')}</span> {prod.fabric}
@@ -1736,7 +1722,7 @@ export const AdminPanel: React.FC = () => {
                     >
                       <option value="nighty">{t('Nighty', 'নাইটি')}</option>
                       <option value="kurti">{t('Kurti', 'কুর্তি')}</option>
-                      <option value="traditional">{t('Traditional', 'ট্র্যাডিশনাল')}</option>
+                      <option value="traditional">{t('Traditional (Man/Woman)', 'ট্র্যাডিশনাল (পুরুষ/মহিলা)')}</option>
                       <option value="bedsheet">{t('Bed Sheet', 'বেড শিট')}</option>
                       <option value="others">{t('Others', 'অন্যান্য')}</option>
                     </select>
