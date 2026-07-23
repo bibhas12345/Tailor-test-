@@ -182,7 +182,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         );
       }
     }, (error) => {
-      console.error('Firestore homepage settings subscription error:', error);
+      console.warn('Firestore homepage settings subscription error (using cached data):', error);
+      try {
+        const saved = localStorage.getItem('pal_tailors_homepage_settings');
+        if (saved) {
+          setHomepageSettings({ ...DEFAULT_HOMEPAGE_SETTINGS, ...JSON.parse(saved) });
+        }
+      } catch (e) {}
     });
 
     return () => unsubscribe();
@@ -193,7 +199,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       localStorage.setItem('pal_tailors_homepage_settings', JSON.stringify(updated));
     } catch (e) {}
-    await setDoc(doc(db, 'settings', 'homepage'), updated, { merge: true });
+    try {
+      await setDoc(doc(db, 'settings', 'homepage'), updated, { merge: true });
+    } catch (err) {
+      console.warn('Firestore update homepage settings failed (saved locally):', err);
+    }
   };
 
 // Helper to strip undefined values so Firestore setDoc / updateDoc never fail
@@ -240,7 +250,17 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
         setProducts(PRODUCTS_DATA);
       }
     }, (error) => {
-      console.error('Firestore products subscription error:', error);
+      console.warn('Firestore products subscription error (using cached/localStorage):', error);
+      try {
+        const saved = localStorage.getItem('pal_tailors_products');
+        if (saved) {
+          setProducts(JSON.parse(saved));
+        } else {
+          setProducts(PRODUCTS_DATA);
+        }
+      } catch (e) {
+        setProducts(PRODUCTS_DATA);
+      }
     });
 
     return () => unsubscribe();
@@ -271,7 +291,17 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
         setFabrics(FABRICS_DATA);
       }
     }, (error) => {
-      console.error('Firestore fabrics subscription error:', error);
+      console.warn('Firestore fabrics subscription error (using cached/localStorage):', error);
+      try {
+        const saved = localStorage.getItem('pal_tailors_fabrics');
+        if (saved) {
+          setFabrics(JSON.parse(saved));
+        } else {
+          setFabrics(FABRICS_DATA);
+        }
+      } catch (e) {
+        setFabrics(FABRICS_DATA);
+      }
     });
 
     return () => unsubscribe();
@@ -292,15 +322,23 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     localStorage.removeItem('pal_tailors_admin_auth');
   };
 
-  // Product CRUD via Firestore
+  // Product CRUD via Firestore + LocalStorage fallback
   const updateProduct = async (updated: Product) => {
     const clean = sanitizeFirestoreData(updated);
     setProducts((prev) => {
       const exists = prev.some((p) => p.id === updated.id);
       const next = exists ? prev.map((p) => (p.id === updated.id ? updated : p)) : [updated, ...prev];
-      return next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+      const sorted = next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+      try {
+        localStorage.setItem('pal_tailors_products', JSON.stringify(sorted));
+      } catch (e) {}
+      return sorted;
     });
-    await setDoc(doc(db, 'products', updated.id), clean, { merge: true });
+    try {
+      await setDoc(doc(db, 'products', updated.id), clean, { merge: true });
+    } catch (err) {
+      console.warn('Firestore setDoc product failed (saved locally):', err);
+    }
   };
 
   const addProduct = async (newProd: Product) => {
@@ -308,14 +346,32 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     setProducts((prev) => {
       const filtered = prev.filter((p) => p.id !== newProd.id);
       const next = [newProd, ...filtered];
-      return next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+      const sorted = next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+      try {
+        localStorage.setItem('pal_tailors_products', JSON.stringify(sorted));
+      } catch (e) {}
+      return sorted;
     });
-    await setDoc(doc(db, 'products', newProd.id), clean);
+    try {
+      await setDoc(doc(db, 'products', newProd.id), clean);
+    } catch (err) {
+      console.warn('Firestore setDoc addProduct failed (saved locally):', err);
+    }
   };
 
   const deleteProduct = async (id: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    await deleteDoc(doc(db, 'products', id));
+    setProducts((prev) => {
+      const next = prev.filter((p) => p.id !== id);
+      try {
+        localStorage.setItem('pal_tailors_products', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+    try {
+      await deleteDoc(doc(db, 'products', id));
+    } catch (err) {
+      console.warn('Firestore deleteDoc product failed (saved locally):', err);
+    }
   };
 
   const toggleProductSoldOut = async (id: string) => {
@@ -326,21 +382,37 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
       isSoldOut: nextIsSoldOut,
       inStock: !nextIsSoldOut,
     };
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updatedFields } : p))
-    );
-    await updateDoc(doc(db, 'products', id), updatedFields);
+    setProducts((prev) => {
+      const next = prev.map((p) => (p.id === id ? { ...p, ...updatedFields } : p));
+      try {
+        localStorage.setItem('pal_tailors_products', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+    try {
+      await updateDoc(doc(db, 'products', id), updatedFields);
+    } catch (err) {
+      console.warn('Firestore updateDoc toggleProductSoldOut failed:', err);
+    }
   };
 
-  // Fabric CRUD via Firestore
+  // Fabric CRUD via Firestore + LocalStorage fallback
   const updateFabric = async (updated: Fabric) => {
     const clean = sanitizeFirestoreData(updated);
     setFabrics((prev) => {
       const exists = prev.some((f) => f.id === updated.id);
       const next = exists ? prev.map((f) => (f.id === updated.id ? updated : f)) : [updated, ...prev];
-      return next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+      const sorted = next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+      try {
+        localStorage.setItem('pal_tailors_fabrics', JSON.stringify(sorted));
+      } catch (e) {}
+      return sorted;
     });
-    await setDoc(doc(db, 'fabrics', updated.id), clean, { merge: true });
+    try {
+      await setDoc(doc(db, 'fabrics', updated.id), clean, { merge: true });
+    } catch (err) {
+      console.warn('Firestore setDoc fabric failed (saved locally):', err);
+    }
   };
 
   const addFabric = async (newFab: Fabric) => {
@@ -348,14 +420,32 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     setFabrics((prev) => {
       const filtered = prev.filter((f) => f.id !== newFab.id);
       const next = [newFab, ...filtered];
-      return next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+      const sorted = next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+      try {
+        localStorage.setItem('pal_tailors_fabrics', JSON.stringify(sorted));
+      } catch (e) {}
+      return sorted;
     });
-    await setDoc(doc(db, 'fabrics', newFab.id), clean);
+    try {
+      await setDoc(doc(db, 'fabrics', newFab.id), clean);
+    } catch (err) {
+      console.warn('Firestore setDoc addFabric failed (saved locally):', err);
+    }
   };
 
   const deleteFabric = async (id: string) => {
-    setFabrics((prev) => prev.filter((f) => f.id !== id));
-    await deleteDoc(doc(db, 'fabrics', id));
+    setFabrics((prev) => {
+      const next = prev.filter((f) => f.id !== id);
+      try {
+        localStorage.setItem('pal_tailors_fabrics', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+    try {
+      await deleteDoc(doc(db, 'fabrics', id));
+    } catch (err) {
+      console.warn('Firestore deleteDoc fabric failed (saved locally):', err);
+    }
   };
 
   const toggleFabricSoldOut = async (id: string) => {
@@ -366,10 +456,18 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
       isSoldOut: nextIsSoldOut,
       inStock: !nextIsSoldOut,
     };
-    setFabrics((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, ...updatedFields } : f))
-    );
-    await updateDoc(doc(db, 'fabrics', id), updatedFields);
+    setFabrics((prev) => {
+      const next = prev.map((f) => (f.id === id ? { ...f, ...updatedFields } : f));
+      try {
+        localStorage.setItem('pal_tailors_fabrics', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+    try {
+      await updateDoc(doc(db, 'fabrics', id), updatedFields);
+    } catch (err) {
+      console.warn('Firestore updateDoc toggleFabricSoldOut failed:', err);
+    }
   };
 
   const resetCatalogToDefaults = async () => {
