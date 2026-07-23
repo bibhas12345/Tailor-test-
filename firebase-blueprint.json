@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "products": {
+      "title": "Products",
+      "description": "Ready-made garments catalog",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "bengaliTitle": { "type": "string" },
+        "category": { "type": "string" },
+        "subCategory": { "type": "string" },
+        "price": { "type": "number" },
+        "fabric": { "type": "string" },
+        "image": { "type": "string" },
+        "rating": { "type": "number" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "description": { "type": "string" },
+        "inStock": { "type": "boolean" },
+        "isSoldOut": { "type": "boolean" }
+      },
+      "required": ["id", "title", "price", "category", "image"]
+    },
+    "fabrics": {
+      "title": "Fabrics",
+      "description": "Pure raw fabric catalog",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "bengaliName": { "type": "string" },
+        "material": { "type": "string" },
+        "pricePerMeter": { "type": "number" },
+        "textureImage": { "type": "string" },
+        "origin": { "type": "string" },
+        "availableColors": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "minMeters": { "type": "number" },
+        "isSoldOut": { "type": "boolean" }
+      },
+      "required": ["id", "name", "pricePerMeter", "textureImage"]
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Homepage and store settings",
+      "properties": {
+        "title": { "type": "string" },
+        "bengaliTitle": { "type": "string" },
+        "tagline": { "type": "string" },
+        "bengaliTagline": { "type": "string" },
+        "imageTagline": { "type": "string" },
+        "bengaliImageTagline": { "type": "string" },
+        "heroImage": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "whatsapp": { "type": "string" }
+      }
+    }
+  }
+}

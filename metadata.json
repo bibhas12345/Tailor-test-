@@ -1,0 +1,6 @@
+{
+  "name": "Pal Tailors - Bespoke Tailoring & Fabrics",
+  "description": "Pal Tailors (পাল টেলরস) - Premium custom dress stitching, ready-made Bengali Panjabis, sarees, blouses, and fabric customization with instant WhatsApp ordering to 6296158014.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
