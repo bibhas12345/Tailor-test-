@@ -20,7 +20,7 @@ export const ProductCatalog: React.FC = () => {
     { id: 'all', labelEn: 'All Collection', labelBn: 'সকল সংগ্রহ' },
     { id: 'nighty', labelEn: 'Nighty', labelBn: 'নাইটি' },
     { id: 'kurti', labelEn: 'Kurti', labelBn: 'কুর্তি' },
-    { id: 'traditional', labelEn: 'Traditional', labelBn: 'ট্র্যাডিশনাল' },
+    { id: 'traditional', labelEn: 'Traditional (Man/Woman)', labelBn: 'ট্র্যাডিশনাল (পুরুষ/মহিলা)' },
     { id: 'bedsheet', labelEn: 'Bed Sheet', labelBn: 'বেড শিট' },
     { id: 'others', labelEn: 'Others', labelBn: 'অন্যান্য' },
   ];
