@@ -2,7 +2,7 @@ import { Product, Fabric, GarmentOption, HomepageSettings } from '../types';
 
 export const SHOP_WHATSAPP_NUMBER = '918116957329';
 export const SHOP_DISPLAY_PHONE = '+91 81169 57329';
-export const SHOP_LOCATION = 'Matgoda ( main road), Raipur, Bankura 722134';
+export const SHOP_LOCATION = 'Matgoda ( jhargram main road), Raipur, Bankura 722134';
 
 export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
   title: 'Pal Tailors',
@@ -40,7 +40,7 @@ export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
       imageUrl: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=600&q=80',
     },
   ],
-  address: 'Matgoda ( main road), Raipur, Bankura 722134',
+  address: 'Matgoda ( jhargram main road), Raipur, Bankura 722134',
   phone: '+91 81169 57329',
   whatsapp: '918116957329',
 };

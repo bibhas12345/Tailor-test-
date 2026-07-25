@@ -15,7 +15,17 @@ import {
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { language, toggleLanguage, theme, toggleTheme, activeTab, setActiveTab, t } = useApp();
+  const {
+    language,
+    toggleLanguage,
+    theme,
+    toggleTheme,
+    activeTab,
+    setActiveTab,
+    cartItems,
+    openCart,
+    t,
+  } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -92,7 +102,7 @@ export const Navbar: React.FC = () => {
             <button
               onClick={toggleLanguage}
               title={t('Switch Language', 'ভাষা পরিবর্তন')}
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-[#D8C7B5] dark:border-[#42342C] bg-[#EFE7DC] dark:bg-[#221A17] text-[#2C221E] dark:text-[#E8DDD0] text-xs font-semibold hover:bg-[#E2D6C6] dark:hover:bg-[#2D221D] transition active:scale-95"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-xl border border-[#D8C7B5] dark:border-[#42342C] bg-[#EFE7DC] dark:bg-[#221A17] text-[#2C221E] dark:text-[#E8DDD0] text-xs font-semibold hover:bg-[#E2D6C6] dark:hover:bg-[#2D221D] transition active:scale-95 cursor-pointer"
             >
               <Globe className="w-3.5 h-3.5 text-[#524037] dark:text-[#C5B8AC]" />
               <span className="flex items-center gap-1 text-[11px]">
@@ -110,12 +120,26 @@ export const Navbar: React.FC = () => {
             <button
               onClick={toggleTheme}
               title={t('Toggle Theme', 'থিম পরিবর্তন')}
-              className="p-2 rounded-xl border border-[#D8C7B5] dark:border-[#42342C] bg-[#EFE7DC] dark:bg-[#221A17] text-[#3D2E28] dark:text-[#E8DDD0] hover:bg-[#E2D6C6] dark:hover:bg-[#2D221D] transition active:scale-95"
+              className="p-1.5 sm:p-2 rounded-xl border border-[#D8C7B5] dark:border-[#42342C] bg-[#EFE7DC] dark:bg-[#221A17] text-[#3D2E28] dark:text-[#E8DDD0] hover:bg-[#E2D6C6] dark:hover:bg-[#2D221D] transition active:scale-95 cursor-pointer"
             >
               {theme === 'dark' ? (
                 <Sun className="w-4 h-4 text-[#E8DDD0]" />
               ) : (
                 <Moon className="w-4 h-4 text-[#3D2E28]" />
+              )}
+            </button>
+
+            {/* Cart Button */}
+            <button
+              onClick={openCart}
+              title={t('View Order Cart', 'অর্ডার কার্ট দেখুন')}
+              className="relative p-1.5 sm:p-2 rounded-xl border border-[#D8C7B5] dark:border-[#42342C] bg-[#3D2E28] text-white dark:bg-[#F3EDE2] dark:text-[#2C221E] hover:bg-[#2A1E1A] dark:hover:bg-white transition active:scale-95 flex items-center justify-center cursor-pointer shadow-xs"
+            >
+              <ShoppingBag className="w-4 h-4 text-[#E8DDD0] dark:text-[#2C221E]" />
+              {cartItems.length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-rose-600 text-white font-extrabold text-[10px] flex items-center justify-center shadow-md animate-in zoom-in border-2 border-[#FAF8F5] dark:border-[#161210]">
+                  {cartItems.length}
+                </span>
               )}
             </button>
 

@@ -145,9 +145,7 @@ export const ContactSection: React.FC = () => {
                   <Clock className="w-5 h-5 text-[#E8DDD0] flex-shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold block text-[#E8DDD0]">{t('Shop Opening Hours:', 'দোকান খোলা থাকার সময়:')}</span>
-                    <span>{t('Monday - Saturday: 10:00 AM - 9:00 PM', 'সোম - শনি: সকাল ১০টা - রাত ৯টা')}</span>
-                    <br />
-                    <span>{t('Sunday: 11:00 AM - 6:00 PM', 'রবিবার: সকাল ১১টা - সন্ধ্যা ৬টা')}</span>
+                    <span>{t('Daily: 8:00 AM - 1:00 PM & 5:00 PM - 9:00 PM', 'প্রতিদিন: সকাল ৮:০০ - দুপুর ১:০০ এবং বিকেল ৫:০০ - রাত ৯:০০')}</span>
                   </div>
                 </div>
               </div>

@@ -5,7 +5,8 @@ import { Product } from '../types';
 import {
   ShoppingBag,
   Search,
-  PhoneCall,
+  Plus,
+  Check,
   CalendarCheck,
   XCircle,
   ZoomIn,
@@ -111,16 +112,14 @@ export const ProductCatalog: React.FC = () => {
 };
 
 const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
-  const { openProductBooking, openImageZoom, t } = useApp();
+  const { openProductBooking, openImageZoom, toggleCartItem, isInCart, t } = useApp();
   const isSoldOut = !!product.isSoldOut;
+  const inCart = isInCart(product.id, 'product');
 
-  const handleQuickWhatsApp = (e: React.MouseEvent) => {
+  const handleToggleCart = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isSoldOut) return;
-    const message = encodeURIComponent(
-      `Hello Pal Tailors! I want to book the ready-made item: *${product.title}* (ID: ${product.id}, Price: ₹${product.price}).`
-    );
-    window.open(`https://wa.me/${SHOP_WHATSAPP_NUMBER}?text=${message}`, '_blank');
+    toggleCartItem(product, 'product');
   };
 
   return (
@@ -226,11 +225,19 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
               </button>
 
               <button
-                onClick={handleQuickWhatsApp}
-                title={t('Quick Order via WhatsApp', 'সরাসরি হোয়াটসঅ্যাপে বার্তা')}
-                className="p-2 sm:p-2.5 rounded-xl bg-[#FFFDF9] dark:bg-[#221A17] hover:bg-[#F2ECE4] dark:hover:bg-[#2D221D] text-[#3D2E28] dark:text-[#E8DDD0] border border-[#D8C7B5] dark:border-[#42342C] transition active:scale-95 shadow-xs flex-shrink-0 flex items-center justify-center cursor-pointer"
+                onClick={handleToggleCart}
+                title={inCart ? t('Remove from Cart', 'কার্ট থেকে মুছুন') : t('Add to Cart', 'কার্টে যোগ করুন')}
+                className={`p-2 sm:p-2.5 rounded-xl border transition active:scale-95 shadow-xs flex-shrink-0 flex items-center justify-center cursor-pointer ${
+                  inCart
+                    ? 'bg-emerald-700 text-white border-emerald-800 dark:bg-emerald-600 dark:border-emerald-500 shadow-emerald-700/20'
+                    : 'bg-[#FFFDF9] dark:bg-[#221A17] hover:bg-[#F2ECE4] dark:hover:bg-[#2D221D] text-[#3D2E28] dark:text-[#E8DDD0] border-[#D8C7B5] dark:border-[#42342C]'
+                }`}
               >
-                <PhoneCall className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                {inCart ? (
+                  <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 stroke-[3]" />
+                ) : (
+                  <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 stroke-[2.5]" />
+                )}
               </button>
             </>
           )}

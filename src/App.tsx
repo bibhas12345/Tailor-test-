@@ -8,6 +8,7 @@ import { FabricCatalog } from './components/FabricCatalog';
 import { ContactSection } from './components/ContactSection';
 import { AdminPanel } from './components/AdminPanel';
 import { BookingModal } from './components/BookingModal';
+import { CartModal } from './components/CartModal';
 import { Footer } from './components/Footer';
 import { SHOP_WHATSAPP_NUMBER } from './data/mockData';
 import { PhoneCall } from 'lucide-react';
@@ -65,6 +66,9 @@ const AppContent: React.FC = () => {
 
       {/* Booking & Customization Modal */}
       <BookingModal />
+
+      {/* Cart Modal */}
+      <CartModal />
 
       {/* Footer */}
       <Footer />

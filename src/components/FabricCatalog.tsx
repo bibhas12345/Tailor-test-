@@ -4,7 +4,8 @@ import { SHOP_WHATSAPP_NUMBER } from '../data/mockData';
 import { Fabric } from '../types';
 import {
   Layers,
-  PhoneCall,
+  Plus,
+  Check,
   Info,
   CalendarCheck,
   XCircle,
@@ -49,21 +50,20 @@ export const FabricCatalog: React.FC = () => {
 };
 
 const FabricCard: React.FC<{ fabric: Fabric }> = ({ fabric }) => {
-  const { openFabricBooking, openImageZoom, t } = useApp();
+  const { openFabricBooking, openImageZoom, toggleCartItem, isInCart, t } = useApp();
   const [selectedColor, setSelectedColor] = useState(fabric.colors[0] || 'Default');
   const isSoldOut = !!fabric.isSoldOut;
+  const inCart = isInCart(fabric.id, 'fabric');
 
   const handleCustomOrder = () => {
     if (isSoldOut) return;
     openFabricBooking(fabric);
   };
 
-  const handleDirectWhatsApp = () => {
+  const handleToggleCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (isSoldOut) return;
-    const text = encodeURIComponent(
-      `Hello Pal Tailors! I am interested in getting custom clothes made from your fabric: *${fabric.name}* (ID: ${fabric.id}, ${fabric.bengaliName}). Color choice: ${selectedColor}.`
-    );
-    window.open(`https://wa.me/${SHOP_WHATSAPP_NUMBER}?text=${text}`, '_blank');
+    toggleCartItem(fabric, 'fabric');
   };
 
   return (
@@ -161,11 +161,19 @@ const FabricCard: React.FC<{ fabric: Fabric }> = ({ fabric }) => {
               </button>
 
               <button
-                onClick={handleDirectWhatsApp}
-                title={t('Order Fabric via WhatsApp', 'হোয়াটসঅ্যাপে বুকিং')}
-                className="p-2 sm:p-2.5 rounded-xl bg-[#FFFDF9] dark:bg-[#221A17] hover:bg-[#F2ECE4] dark:hover:bg-[#2D221D] text-[#3D2E28] dark:text-[#E8DDD0] border border-[#D8C7B5] dark:border-[#42342C] transition active:scale-95 shadow-xs flex-shrink-0 flex items-center justify-center cursor-pointer"
+                onClick={handleToggleCart}
+                title={inCart ? t('Remove from Cart', 'কার্ট থেকে মুছুন') : t('Add to Cart', 'কার্টে যোগ করুন')}
+                className={`p-2 sm:p-2.5 rounded-xl border transition active:scale-95 shadow-xs flex-shrink-0 flex items-center justify-center cursor-pointer ${
+                  inCart
+                    ? 'bg-emerald-700 text-white border-emerald-800 dark:bg-emerald-600 dark:border-emerald-500 shadow-emerald-700/20'
+                    : 'bg-[#FFFDF9] dark:bg-[#221A17] hover:bg-[#F2ECE4] dark:hover:bg-[#2D221D] text-[#3D2E28] dark:text-[#E8DDD0] border-[#D8C7B5] dark:border-[#42342C]'
+                }`}
               >
-                <PhoneCall className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                {inCart ? (
+                  <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 stroke-[3]" />
+                ) : (
+                  <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 stroke-[2.5]" />
+                )}
               </button>
             </>
           )}

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Product, Fabric, GarmentOption, HomepageSettings } from '../types';
+import { Product, Fabric, GarmentOption, HomepageSettings, CartItem } from '../types';
 import { PRODUCTS_DATA, FABRICS_DATA, DEFAULT_HOMEPAGE_SETTINGS } from '../data/mockData';
 import { db } from '../lib/firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
@@ -61,6 +61,17 @@ interface AppContextType {
   lightboxImage: { url: string; title?: string; itemId?: string; additionalImages?: string[] } | null;
   openImageZoom: (url: string, title?: string, itemId?: string, additionalImages?: string[]) => void;
   closeImageZoom: () => void;
+
+  // Cart state
+  cartItems: CartItem[];
+  addToCart: (item: Product | Fabric, itemType: 'product' | 'fabric') => void;
+  removeFromCart: (cartId: string) => void;
+  toggleCartItem: (item: Product | Fabric, itemType: 'product' | 'fabric') => void;
+  clearCart: () => void;
+  isInCart: (itemId: string, itemType: 'product' | 'fabric') => boolean;
+  isCartOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
 
   // Translation Helper
   t: (enText: string, bnText: string) => string;
@@ -133,7 +144,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return localStorage.getItem('pal_tailors_admin_auth') === 'true';
   });
 
-  // Realtime Products, Fabrics and Homepage Settings from Firestore
+  // Realtime Products, Fabrics and Homepage Settings from Firestore with 15-min TTL cache
+  const CACHE_TTL_MS = 15 * 60 * 1000; // 15 Minutes TTL
+
+  const [cacheTick, setCacheTick] = useState(0);
+
+  // Check cache freshness every minute so tabs open >15 min fetch fresh data automatically
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCacheTick((prev) => prev + 1);
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const isCacheValid = (key: string): boolean => {
+    try {
+      const savedTime = localStorage.getItem(`${key}_time`);
+      if (!savedTime) return false;
+      const age = Date.now() - Number(savedTime);
+      return age < CACHE_TTL_MS;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const saveToCache = (key: string, data: any) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+      localStorage.setItem(`${key}_time`, Date.now().toString());
+    } catch (e) {}
+  };
+
   const [homepageSettings, setHomepageSettings] = useState<HomepageSettings>(() => {
     try {
       const saved = localStorage.getItem('pal_tailors_homepage_settings');
@@ -166,16 +207,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return FABRICS_DATA;
   });
 
-  // Subscribe to Homepage Settings in Firestore
+  // Subscribe to Homepage Settings in Firestore (with 15 min TTL cache for customers)
   useEffect(() => {
+    const cacheKey = 'pal_tailors_homepage_settings';
+    const hasCache = !!localStorage.getItem(cacheKey);
+
+    if (!isAdminLoggedIn && hasCache && isCacheValid(cacheKey)) {
+      return;
+    }
+
     const settingsDocRef = doc(db, 'settings', 'homepage');
     const unsubscribe = onSnapshot(settingsDocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = { ...DEFAULT_HOMEPAGE_SETTINGS, ...docSnap.data() } as HomepageSettings;
         setHomepageSettings(data);
-        try {
-          localStorage.setItem('pal_tailors_homepage_settings', JSON.stringify(data));
-        } catch (e) {}
+        saveToCache(cacheKey, data);
       } else {
         setDoc(settingsDocRef, DEFAULT_HOMEPAGE_SETTINGS).catch((err) =>
           console.error('Error seeding homepage settings:', err)
@@ -184,7 +230,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, (error) => {
       console.warn('Firestore homepage settings subscription error (using cached data):', error);
       try {
-        const saved = localStorage.getItem('pal_tailors_homepage_settings');
+        const saved = localStorage.getItem(cacheKey);
         if (saved) {
           setHomepageSettings({ ...DEFAULT_HOMEPAGE_SETTINGS, ...JSON.parse(saved) });
         }
@@ -192,13 +238,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isAdminLoggedIn, cacheTick]);
 
   const updateHomepageSettings = async (updated: HomepageSettings) => {
     setHomepageSettings(updated);
-    try {
-      localStorage.setItem('pal_tailors_homepage_settings', JSON.stringify(updated));
-    } catch (e) {}
+    saveToCache('pal_tailors_homepage_settings', updated);
     try {
       await setDoc(doc(db, 'settings', 'homepage'), updated, { merge: true });
     } catch (err) {
@@ -225,8 +269,15 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
   return clean;
 }
 
-  // Subscribe to Products collection in Firestore
+  // Subscribe to Products collection in Firestore (with 15 min TTL cache for customers)
   useEffect(() => {
+    const cacheKey = 'pal_tailors_products';
+    const hasCache = !!localStorage.getItem(cacheKey);
+
+    if (!isAdminLoggedIn && hasCache && isCacheValid(cacheKey)) {
+      return;
+    }
+
     const productsRef = collection(db, 'products');
     const unsubscribe = onSnapshot(productsRef, (snapshot) => {
       if (!snapshot.empty) {
@@ -236,9 +287,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
         });
         items.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
         setProducts(items);
-        try {
-          localStorage.setItem('pal_tailors_products', JSON.stringify(items));
-        } catch (e) {}
+        saveToCache(cacheKey, items);
       } else {
         // Seed initial products to Firestore
         PRODUCTS_DATA.forEach((prod) => {
@@ -248,11 +297,12 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
           );
         });
         setProducts(PRODUCTS_DATA);
+        saveToCache(cacheKey, PRODUCTS_DATA);
       }
     }, (error) => {
       console.warn('Firestore products subscription error (using cached/localStorage):', error);
       try {
-        const saved = localStorage.getItem('pal_tailors_products');
+        const saved = localStorage.getItem(cacheKey);
         if (saved) {
           setProducts(JSON.parse(saved));
         } else {
@@ -264,10 +314,17 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isAdminLoggedIn, cacheTick]);
 
-  // Subscribe to Fabrics collection in Firestore
+  // Subscribe to Fabrics collection in Firestore (with 15 min TTL cache for customers)
   useEffect(() => {
+    const cacheKey = 'pal_tailors_fabrics';
+    const hasCache = !!localStorage.getItem(cacheKey);
+
+    if (!isAdminLoggedIn && hasCache && isCacheValid(cacheKey)) {
+      return;
+    }
+
     const fabricsRef = collection(db, 'fabrics');
     const unsubscribe = onSnapshot(fabricsRef, (snapshot) => {
       if (!snapshot.empty) {
@@ -277,9 +334,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
         });
         items.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
         setFabrics(items);
-        try {
-          localStorage.setItem('pal_tailors_fabrics', JSON.stringify(items));
-        } catch (e) {}
+        saveToCache(cacheKey, items);
       } else {
         // Seed initial fabrics to Firestore
         FABRICS_DATA.forEach((fab) => {
@@ -289,11 +344,12 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
           );
         });
         setFabrics(FABRICS_DATA);
+        saveToCache(cacheKey, FABRICS_DATA);
       }
     }, (error) => {
       console.warn('Firestore fabrics subscription error (using cached/localStorage):', error);
       try {
-        const saved = localStorage.getItem('pal_tailors_fabrics');
+        const saved = localStorage.getItem(cacheKey);
         if (saved) {
           setFabrics(JSON.parse(saved));
         } else {
@@ -305,7 +361,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isAdminLoggedIn, cacheTick]);
 
   // Admin Auth
   const adminLogin = (id: string, pass: string): boolean => {
@@ -329,9 +385,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
       const exists = prev.some((p) => p.id === updated.id);
       const next = exists ? prev.map((p) => (p.id === updated.id ? updated : p)) : [updated, ...prev];
       const sorted = next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
-      try {
-        localStorage.setItem('pal_tailors_products', JSON.stringify(sorted));
-      } catch (e) {}
+      saveToCache('pal_tailors_products', sorted);
       return sorted;
     });
     try {
@@ -347,9 +401,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
       const filtered = prev.filter((p) => p.id !== newProd.id);
       const next = [newProd, ...filtered];
       const sorted = next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
-      try {
-        localStorage.setItem('pal_tailors_products', JSON.stringify(sorted));
-      } catch (e) {}
+      saveToCache('pal_tailors_products', sorted);
       return sorted;
     });
     try {
@@ -362,9 +414,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
   const deleteProduct = async (id: string) => {
     setProducts((prev) => {
       const next = prev.filter((p) => p.id !== id);
-      try {
-        localStorage.setItem('pal_tailors_products', JSON.stringify(next));
-      } catch (e) {}
+      saveToCache('pal_tailors_products', next);
       return next;
     });
     try {
@@ -384,9 +434,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     };
     setProducts((prev) => {
       const next = prev.map((p) => (p.id === id ? { ...p, ...updatedFields } : p));
-      try {
-        localStorage.setItem('pal_tailors_products', JSON.stringify(next));
-      } catch (e) {}
+      saveToCache('pal_tailors_products', next);
       return next;
     });
     try {
@@ -403,9 +451,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
       const exists = prev.some((f) => f.id === updated.id);
       const next = exists ? prev.map((f) => (f.id === updated.id ? updated : f)) : [updated, ...prev];
       const sorted = next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
-      try {
-        localStorage.setItem('pal_tailors_fabrics', JSON.stringify(sorted));
-      } catch (e) {}
+      saveToCache('pal_tailors_fabrics', sorted);
       return sorted;
     });
     try {
@@ -421,9 +467,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
       const filtered = prev.filter((f) => f.id !== newFab.id);
       const next = [newFab, ...filtered];
       const sorted = next.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
-      try {
-        localStorage.setItem('pal_tailors_fabrics', JSON.stringify(sorted));
-      } catch (e) {}
+      saveToCache('pal_tailors_fabrics', sorted);
       return sorted;
     });
     try {
@@ -436,9 +480,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
   const deleteFabric = async (id: string) => {
     setFabrics((prev) => {
       const next = prev.filter((f) => f.id !== id);
-      try {
-        localStorage.setItem('pal_tailors_fabrics', JSON.stringify(next));
-      } catch (e) {}
+      saveToCache('pal_tailors_fabrics', next);
       return next;
     });
     try {
@@ -458,9 +500,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     };
     setFabrics((prev) => {
       const next = prev.map((f) => (f.id === id ? { ...f, ...updatedFields } : f));
-      try {
-        localStorage.setItem('pal_tailors_fabrics', JSON.stringify(next));
-      } catch (e) {}
+      saveToCache('pal_tailors_fabrics', next);
       return next;
     });
     try {
@@ -473,6 +513,8 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
   const resetCatalogToDefaults = async () => {
     setProducts(PRODUCTS_DATA);
     setFabrics(FABRICS_DATA);
+    saveToCache('pal_tailors_products', PRODUCTS_DATA);
+    saveToCache('pal_tailors_fabrics', FABRICS_DATA);
     try {
       const batch = writeBatch(db);
       PRODUCTS_DATA.forEach((p) => {
@@ -528,7 +570,12 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     setSelectedFabric(null);
     setSelectedGarment(null);
     setBookingType('ready_made');
-    window.history.pushState({ modal: 'booking' }, '');
+    if (isCartOpen) {
+      setIsCartOpen(false);
+      window.history.replaceState({ modal: 'booking' }, '');
+    } else {
+      window.history.pushState({ modal: 'booking' }, '');
+    }
     setIsBookingModalOpen(true);
   };
 
@@ -537,7 +584,12 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     setSelectedProduct(null);
     setSelectedGarment(null);
     setBookingType('custom_fabric');
-    window.history.pushState({ modal: 'booking' }, '');
+    if (isCartOpen) {
+      setIsCartOpen(false);
+      window.history.replaceState({ modal: 'booking' }, '');
+    } else {
+      window.history.pushState({ modal: 'booking' }, '');
+    }
     setIsBookingModalOpen(true);
   };
 
@@ -546,7 +598,12 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     if (fabric) setSelectedFabric(fabric);
     setSelectedProduct(null);
     setBookingType('custom_dress');
-    window.history.pushState({ modal: 'booking' }, '');
+    if (isCartOpen) {
+      setIsCartOpen(false);
+      window.history.replaceState({ modal: 'booking' }, '');
+    } else {
+      window.history.pushState({ modal: 'booking' }, '');
+    }
     setIsBookingModalOpen(true);
   };
 
@@ -555,7 +612,12 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     setSelectedFabric(null);
     setSelectedGarment(null);
     setBookingType('general');
-    window.history.pushState({ modal: 'booking' }, '');
+    if (isCartOpen) {
+      setIsCartOpen(false);
+      window.history.replaceState({ modal: 'booking' }, '');
+    } else {
+      window.history.pushState({ modal: 'booking' }, '');
+    }
     setIsBookingModalOpen(true);
   };
 
@@ -587,6 +649,87 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     }
   };
 
+  // Cart State & Methods
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('pal_tailors_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('pal_tailors_cart', JSON.stringify(cartItems));
+    } catch (e) {}
+  }, [cartItems]);
+
+  const addToCart = (item: Product | Fabric, itemType: 'product' | 'fabric') => {
+    const cartId = `${itemType}_${item.id}`;
+    setCartItems((prev) => {
+      if (prev.some((c) => c.cartId === cartId)) return prev;
+      return [
+        ...prev,
+        {
+          cartId,
+          itemType,
+          product: itemType === 'product' ? (item as Product) : undefined,
+          fabric: itemType === 'fabric' ? (item as Fabric) : undefined,
+          addedAt: Date.now(),
+        },
+      ];
+    });
+  };
+
+  const removeFromCart = (cartId: string) => {
+    setCartItems((prev) => prev.filter((c) => c.cartId !== cartId));
+  };
+
+  const toggleCartItem = (item: Product | Fabric, itemType: 'product' | 'fabric') => {
+    const cartId = `${itemType}_${item.id}`;
+    setCartItems((prev) => {
+      const exists = prev.some((c) => c.cartId === cartId);
+      if (exists) {
+        return prev.filter((c) => c.cartId !== cartId);
+      } else {
+        return [
+          ...prev,
+          {
+            cartId,
+            itemType,
+            product: itemType === 'product' ? (item as Product) : undefined,
+            fabric: itemType === 'fabric' ? (item as Fabric) : undefined,
+            addedAt: Date.now(),
+          },
+        ];
+      }
+    });
+  };
+
+  const clearCart = () => {
+    setCartItems([]);
+  };
+
+  const isInCart = (itemId: string, itemType: 'product' | 'fabric') => {
+    const cartId = `${itemType}_${itemId}`;
+    return cartItems.some((c) => c.cartId === cartId);
+  };
+
+  const openCart = () => {
+    window.history.pushState({ modal: 'cart' }, '');
+    setIsCartOpen(true);
+  };
+
+  const closeCart = () => {
+    setIsCartOpen(false);
+    if (window.history.state && window.history.state.modal === 'cart') {
+      window.history.back();
+    }
+  };
+
   // Listen to mobile phone hardware back button / browser popstate to close open popups
   useEffect(() => {
     const handlePopState = () => {
@@ -594,6 +737,8 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
         setLightboxImage(null);
       } else if (isBookingModalOpen) {
         setIsBookingModalOpen(false);
+      } else if (isCartOpen) {
+        setIsCartOpen(false);
       }
     };
 
@@ -601,7 +746,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [lightboxImage, isBookingModalOpen]);
+  }, [lightboxImage, isBookingModalOpen, isCartOpen]);
 
   const t = (enText: string, bnText: string) => {
     return language === 'bn' ? bnText : enText;
@@ -647,6 +792,15 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
         lightboxImage,
         openImageZoom,
         closeImageZoom,
+        cartItems,
+        addToCart,
+        removeFromCart,
+        toggleCartItem,
+        clearCart,
+        isInCart,
+        isCartOpen,
+        openCart,
+        closeCart,
         t,
       }}
     >

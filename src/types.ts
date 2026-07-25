@@ -1,3 +1,11 @@
+export interface CartItem {
+  cartId: string;
+  itemType: 'product' | 'fabric';
+  product?: Product;
+  fabric?: Fabric;
+  addedAt: number;
+}
+
 export interface Product {
   id: string;
   title: string;
