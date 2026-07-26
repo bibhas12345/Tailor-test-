@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { SHOP_WHATSAPP_NUMBER, SHOP_DISPLAY_PHONE } from '../data/mockData';
+import { formatFabricPrice } from '../types';
 import {
   X,
   Send,
@@ -123,7 +124,10 @@ export const BookingModal: React.FC = () => {
         message += `🧵 *Selected Fabric:* ${selectedFabric.name} (${selectedFabric.bengaliName})\n`;
         message += `🆔 *Fabric ID:* ${selectedFabric.id}\n`;
         if (selectedFabric.pricePerMeter) {
-          message += `💰 *Price:* ₹${selectedFabric.pricePerMeter}/meter\n`;
+          const formatted = String(selectedFabric.pricePerMeter).includes('/')
+            ? formatFabricPrice(selectedFabric.pricePerMeter)
+            : `${formatFabricPrice(selectedFabric.pricePerMeter)}/meter`;
+          message += `💰 *Price:* ${formatted}\n`;
         }
       }
     }

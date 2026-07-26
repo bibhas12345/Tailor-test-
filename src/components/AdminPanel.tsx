@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Product, Fabric, HomepageSettings } from '../types';
+import { Product, Fabric, HomepageSettings, formatFabricPrice } from '../types';
 import {
   Lock,
   User,
@@ -491,7 +491,7 @@ export const AdminPanel: React.FC = () => {
       name: fabricForm.name || 'Pure Fabric',
       bengaliName: fabricForm.bengaliName || fabricForm.name || 'কাপড়',
       material: fabricForm.material || 'Cotton Silk',
-      pricePerMeter: Number(fabricForm.pricePerMeter) || 500,
+      pricePerMeter: fabricForm.pricePerMeter !== undefined && fabricForm.pricePerMeter !== '' ? fabricForm.pricePerMeter : 650,
       origin: fabricForm.origin || 'Bengal',
       description: fabricForm.description || '',
       colors: Array.isArray(fabricForm.colors)
@@ -1058,7 +1058,7 @@ export const AdminPanel: React.FC = () => {
 
                           <div className="text-xs text-[#63483E] dark:text-[#D8C3B8] space-y-1">
                             <p>
-                              <span className="font-bold">{t('Price:', 'দাম:')}</span> ₹{fab.pricePerMeter || 500}
+                              <span className="font-bold">{t('Price:', 'দাম:')}</span> {formatFabricPrice(fab.pricePerMeter)}
                             </p>
                             <p>
                               <span className="font-bold">{t('Material:', 'উপাদান:')}</span> {fab.material}
@@ -2078,15 +2078,15 @@ export const AdminPanel: React.FC = () => {
 
                   <div className="space-y-1">
                     <label className="font-bold text-[#331A1E] dark:text-[#F7EBE8]">
-                      {t('Fabric Price (₹) *', 'ফ্যাব্রিক এর দাম (₹) *')}
+                      {t('Fabric Price (e.g. 99/meter or 99) *', 'ফ্যাব্রিক এর দাম (যেমন ৯৯/মিটার বা ৯৯) *')}
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       required
-                      value={fabricForm.pricePerMeter || ''}
-                      onChange={(e) => setFabricForm({ ...fabricForm, pricePerMeter: Number(e.target.value) })}
+                      value={fabricForm.pricePerMeter !== undefined ? fabricForm.pricePerMeter : ''}
+                      onChange={(e) => setFabricForm({ ...fabricForm, pricePerMeter: e.target.value })}
                       className="w-full px-3 py-2 bg-[#FAF5EE] dark:bg-[#180C0F] border border-[#E5D8C8] dark:border-[#3D1B22] rounded-xl text-xs font-medium"
-                      placeholder="e.g. 650"
+                      placeholder="e.g. 99/meter or 99"
                     />
                   </div>
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { SHOP_WHATSAPP_NUMBER } from '../data/mockData';
+import { formatFabricPrice } from '../types';
 import {
   ShoppingBag,
   X,
@@ -37,7 +38,10 @@ export const CartModal: React.FC = () => {
       return acc + (Number(curr.product.price) || 0);
     }
     if (curr.itemType === 'fabric' && curr.fabric) {
-      return acc + (Number(curr.fabric.pricePerMeter) || 0);
+      const priceNum = typeof curr.fabric.pricePerMeter === 'number'
+        ? curr.fabric.pricePerMeter
+        : parseFloat(String(curr.fabric.pricePerMeter).replace(/[^0-9.]/g, '')) || 0;
+      return acc + priceNum;
     }
     return acc;
   }, 0);
@@ -50,7 +54,10 @@ export const CartModal: React.FC = () => {
       if (ci.itemType === 'product' && ci.product) {
         itemListText += `\n${idx + 1}. *[Ready-Made]* ${ci.product.title} (ID: *${ci.product.id}*) - ₹${ci.product.price}`;
       } else if (ci.itemType === 'fabric' && ci.fabric) {
-        itemListText += `\n${idx + 1}. *[Fabric]* ${ci.fabric.name} (ID: *${ci.fabric.id}*) - ₹${ci.fabric.pricePerMeter || 500}/meter`;
+        const fabPriceStr = String(ci.fabric.pricePerMeter || '').includes('/')
+          ? formatFabricPrice(ci.fabric.pricePerMeter)
+          : `${formatFabricPrice(ci.fabric.pricePerMeter)}/meter`;
+        itemListText += `\n${idx + 1}. *[Fabric]* ${ci.fabric.name} (ID: *${ci.fabric.id}*) - ${fabPriceStr}`;
       }
     });
 
@@ -172,7 +179,9 @@ export const CartModal: React.FC = () => {
               const itemId = isProduct ? cartItem.product!.id : cartItem.fabric!.id;
               const priceDisplay = isProduct
                 ? `₹${cartItem.product!.price}`
-                : `₹${cartItem.fabric!.pricePerMeter || 500}/m`;
+                : (String(cartItem.fabric!.pricePerMeter || '').includes('/')
+                  ? formatFabricPrice(cartItem.fabric!.pricePerMeter)
+                  : `${formatFabricPrice(cartItem.fabric!.pricePerMeter)}/m`);
 
               return (
                 <div

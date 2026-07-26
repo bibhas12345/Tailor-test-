@@ -35,7 +35,7 @@ export interface Fabric {
   name: string;
   bengaliName: string;
   material: string;
-  pricePerMeter?: number;
+  pricePerMeter?: number | string;
   colors: string[];
   textureImage: string;
   additionalImages?: string[];
@@ -47,6 +47,17 @@ export interface Fabric {
   isSoldOut?: boolean;
   displayOrder?: number;
 }
+
+export const formatFabricPrice = (pricePerMeter?: number | string): string => {
+  if (pricePerMeter === undefined || pricePerMeter === null || pricePerMeter === '') {
+    return '₹500';
+  }
+  const str = String(pricePerMeter).trim();
+  if (str.startsWith('₹') || str.startsWith('Rs') || str.startsWith('RS')) {
+    return str;
+  }
+  return `₹${str}`;
+};
 
 export interface GarmentOption {
   id: string;

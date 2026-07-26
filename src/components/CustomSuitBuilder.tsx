@@ -39,7 +39,10 @@ export const CustomSuitBuilder: React.FC = () => {
   };
 
   // Pricing calculations
-  const fabricCost = selectedFabric.pricePerMeter * fabricMeters;
+  const fabPriceNum = typeof selectedFabric.pricePerMeter === 'number'
+    ? selectedFabric.pricePerMeter
+    : parseFloat(String(selectedFabric.pricePerMeter).replace(/[^0-9.]/g, '')) || 0;
+  const fabricCost = fabPriceNum * fabricMeters;
   const stitchingLabor = selectedGarment.baseStitchingCharge;
   const selectedEmb = selectedGarment.embroideryOptions.find((e) => e.id === selectedEmbroideryId);
   const embroideryCost = selectedEmb ? selectedEmb.price : 0;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
+import { formatFabricPrice } from '../types';
 import { ShoppingBag, Layers, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const HomeTwoCardsSection: React.FC = () => {
@@ -430,7 +431,9 @@ export const HomeTwoCardsSection: React.FC = () => {
 
                     {/* Price per meter tag (Clean White / Neutral Tone) */}
                     <div className="absolute bottom-3 right-3 bg-white/95 text-stone-900 px-2.5 py-1 rounded-md text-xs font-extrabold shadow-sm backdrop-blur-xs">
-                      ₹{item.pricePerMeter}/{t('meter', 'মিটার')}
+                      {String(item.pricePerMeter || '').includes('/')
+                        ? formatFabricPrice(item.pricePerMeter)
+                        : `${formatFabricPrice(item.pricePerMeter)}/${t('meter', 'মিটার')}`}
                     </div>
                   </div>
 

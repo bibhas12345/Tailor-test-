@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { SHOP_WHATSAPP_NUMBER } from '../data/mockData';
-import { Fabric } from '../types';
+import { Fabric, formatFabricPrice } from '../types';
 import {
   Layers,
   Plus,
@@ -135,7 +135,7 @@ const FabricCard: React.FC<{ fabric: Fabric }> = ({ fabric }) => {
             
             {/* Price Badge */}
             <span className="px-2.5 py-1 rounded-lg bg-[#EFE7DC] dark:bg-[#2A1E1A] text-[#801921] dark:text-amber-300 font-extrabold text-xs sm:text-sm whitespace-nowrap border border-[#D8C7B5] dark:border-[#4A202A] flex-shrink-0">
-              ₹{fabric.pricePerMeter || 500}
+              {formatFabricPrice(fabric.pricePerMeter)}
             </span>
           </div>
         </div>
