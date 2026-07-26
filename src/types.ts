@@ -134,6 +134,12 @@ export interface HomepageSettings {
   heroImage: string;
   frontProductImage?: string;
   frontFabricImage?: string;
+  sliderButtonText?: string;
+  bengaliSliderButtonText?: string;
+  productSliderButtonText?: string;
+  bengaliProductSliderButtonText?: string;
+  fabricSliderButtonText?: string;
+  bengaliFabricSliderButtonText?: string;
   craftPhotos?: CraftDemoPhoto[];
   address: string;
   phone: string;

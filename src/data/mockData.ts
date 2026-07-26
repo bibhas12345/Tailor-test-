@@ -14,6 +14,12 @@ export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
   heroImage: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=1200&q=80',
   frontProductImage: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
   frontFabricImage: 'https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?auto=format&fit=crop&w=800&q=80',
+  sliderButtonText: 'Explore Now',
+  bengaliSliderButtonText: 'এখনই দেখুন',
+  productSliderButtonText: 'Explore All Products',
+  bengaliProductSliderButtonText: 'সব রেডিমেড কালেকশন দেখুন',
+  fabricSliderButtonText: 'Explore All Fabrics',
+  bengaliFabricSliderButtonText: 'সব থান কাপড় ক্যাটালগ দেখুন',
   craftPhotos: [
     {
       id: '1',

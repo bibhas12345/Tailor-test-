@@ -61,6 +61,7 @@ export const AdminPanel: React.FC = () => {
 
   // Search query state for admin panel
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
+  const [selectedAdminCategory, setSelectedAdminCategory] = useState<string>('all');
 
   // Homepage Settings form state
   const [homepageForm, setHomepageForm] = useState<HomepageSettings>(homepageSettings);
@@ -121,75 +122,7 @@ export const AdminPanel: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleHomepageFrontProductUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const rawDataUrl = reader.result as string;
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 900;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > MAX_WIDTH) {
-          height = Math.round((height * MAX_WIDTH) / width);
-          width = MAX_WIDTH;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-          setHomepageForm((prev) => ({ ...prev, frontProductImage: compressedDataUrl }));
-        } else {
-          setHomepageForm((prev) => ({ ...prev, frontProductImage: rawDataUrl }));
-        }
-      };
-      img.src = rawDataUrl;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleHomepageFrontFabricUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const rawDataUrl = reader.result as string;
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 900;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > MAX_WIDTH) {
-          height = Math.round((height * MAX_WIDTH) / width);
-          width = MAX_WIDTH;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-          setHomepageForm((prev) => ({ ...prev, frontFabricImage: compressedDataUrl }));
-        } else {
-          setHomepageForm((prev) => ({ ...prev, frontFabricImage: rawDataUrl }));
-        }
-      };
-      img.src = rawDataUrl;
-    };
-    reader.readAsDataURL(file);
-  };
 
   const defaultCraftDemoPhotos = [
     {
@@ -412,13 +345,14 @@ export const AdminPanel: React.FC = () => {
   const openAddProductModal = () => {
     const newId = generateUniqueProductId();
     const nextOrder = products.length > 0 ? Math.max(...products.map((p) => Number(p.displayOrder) || 0)) + 1 : 1;
+    const defaultCat = (selectedAdminCategory !== 'all' ? selectedAdminCategory : 'kurti') as any;
     setEditingProduct(null);
     setProductForm({
       id: newId,
       title: '',
       bengaliTitle: '',
-      category: 'kurti',
-      subCategory: 'Kurti Collection',
+      category: defaultCat,
+      subCategory: `${defaultCat.charAt(0).toUpperCase() + defaultCat.slice(1)} Collection`,
       price: 1299,
       originalPrice: 1599,
       fabric: 'Soft Cotton',
@@ -774,37 +708,99 @@ export const AdminPanel: React.FC = () => {
         {/* SECTION 1: PRODUCTS LIST */}
         {adminSection === 'products' && (
           <div className="space-y-4">
+
+            {/* Category Navigation Tabs for Admin */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-[#E5D8C8]/60 dark:border-[#3D1B22]/60">
+              {[
+                { id: 'all', labelEn: 'All Collection', labelBn: 'সকল সংগ্রহ' },
+                { id: 'nighty', labelEn: 'Nighty', labelBn: 'নাইটি' },
+                { id: 'kurti', labelEn: 'Kurti', labelBn: 'কুর্তি' },
+                { id: 'traditional', labelEn: 'Traditional', labelBn: 'ট্র্যাডিশনাল' },
+                { id: 'bedsheet', labelEn: 'Bed Sheet', labelBn: 'বেড শিট' },
+                { id: 'others', labelEn: 'Others', labelBn: 'অন্যান্য' },
+              ].map((cat) => {
+                const isActive = selectedAdminCategory === cat.id;
+                const count =
+                  cat.id === 'all'
+                    ? products.length
+                    : products.filter((p) =>
+                        cat.id === 'others'
+                          ? p.category === 'others' || !['nighty', 'kurti', 'traditional', 'bedsheet'].includes(p.category)
+                          : p.category === cat.id
+                      ).length;
+
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedAdminCategory(cat.id)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                      isActive
+                        ? 'bg-[#801921] text-white shadow-md'
+                        : 'bg-[#FFFDF9] dark:bg-[#221216] text-[#63483E] dark:text-[#D8C3B8] border border-[#E5D8C8] dark:border-[#3D1B22] hover:border-[#801921]'
+                    }`}
+                  >
+                    <span>{t(cat.labelEn, cat.labelBn)}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
+                        isActive
+                          ? 'bg-amber-400 text-stone-900 font-extrabold'
+                          : 'bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-300'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
             {products.filter((prod) => {
+              const matchesCategory =
+                selectedAdminCategory === 'all'
+                  ? true
+                  : selectedAdminCategory === 'others'
+                  ? prod.category === 'others' || !['nighty', 'kurti', 'traditional', 'bedsheet'].includes(prod.category)
+                  : prod.category === selectedAdminCategory;
+
               const q = adminSearchQuery.trim().toLowerCase();
-              if (!q) return true;
-              return (
+              const matchesSearch =
+                !q ||
                 prod.id.toLowerCase().includes(q) ||
                 prod.title.toLowerCase().includes(q) ||
                 prod.bengaliTitle.includes(q) ||
                 prod.category.toLowerCase().includes(q) ||
                 prod.subCategory.toLowerCase().includes(q) ||
-                prod.fabric.toLowerCase().includes(q)
-              );
+                prod.fabric.toLowerCase().includes(q);
+
+              return matchesCategory && matchesSearch;
             }).length === 0 ? (
               <div className="p-8 text-center bg-[#FFFDF9] dark:bg-[#221216] rounded-2xl border border-[#E5D8C8] dark:border-[#3D1B22] text-[#63483E] dark:text-[#D8C3B8]">
                 <p className="font-bold text-sm">
-                  {t('No products matched your search ID or title.', 'আপনার সার্চ আইডির সাথে কোনো পোশাক মেলেনি।')}
+                  {t('No products matched your search or selected category.', 'আপনার সার্চ বা ক্যাটাগরির সাথে কোনো পোশাক মেলেনি।')}
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products
                   .filter((prod) => {
+                    const matchesCategory =
+                      selectedAdminCategory === 'all'
+                        ? true
+                        : selectedAdminCategory === 'others'
+                        ? prod.category === 'others' || !['nighty', 'kurti', 'traditional', 'bedsheet'].includes(prod.category)
+                        : prod.category === selectedAdminCategory;
+
                     const q = adminSearchQuery.trim().toLowerCase();
-                    if (!q) return true;
-                    return (
+                    const matchesSearch =
+                      !q ||
                       prod.id.toLowerCase().includes(q) ||
                       prod.title.toLowerCase().includes(q) ||
                       prod.bengaliTitle.includes(q) ||
                       prod.category.toLowerCase().includes(q) ||
                       prod.subCategory.toLowerCase().includes(q) ||
-                      prod.fabric.toLowerCase().includes(q)
-                    );
+                      prod.fabric.toLowerCase().includes(q);
+
+                    return matchesCategory && matchesSearch;
                   })
                   .map((prod, idx) => {
                     const isSoldOut = !!prod.isSoldOut;
@@ -1300,84 +1296,87 @@ export const AdminPanel: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Front Cards Images: Product & Fabric Cards */}
+                {/* Front Cards Images & Slider Settings */}
                 <div className="bg-[#FFFDF9] dark:bg-[#221216] p-6 rounded-2xl border border-[#E5D8C8] dark:border-[#3D1B22] shadow-sm space-y-4">
                   <h3 className="font-serif font-bold text-base text-[#331A1E] dark:text-[#F7EBE8] flex items-center gap-2 pb-2 border-b border-[#E5D8C8] dark:border-[#3D1B22]">
                     <Package className="w-4 h-4 text-[#801921] dark:text-amber-400" />
-                    <span>{t('Front Product & Front Fabric Images', 'হোমপেজের ফ্রন্ট প্রোডাক্ট ও ফ্যাব্রিক ছবি')}</span>
+                    <span>{t('Front Slider & Homepage Cards Settings', 'হোমপেজ স্লাইডার ও ফ্রন্ট কার্ড সেটিংস')}</span>
                   </h3>
 
-                  {/* Front Product Image */}
-                  <div className="space-y-2 p-3 bg-[#FAF5EE] dark:bg-[#180C0F] rounded-xl border border-[#E5D8C8] dark:border-[#3D1B22]">
-                    <label className="font-bold text-xs text-[#331A1E] dark:text-[#F7EBE8] block">
-                      {t('Front Product Image (Ready Made Card)', 'ফ্রন্ট প্রোডাক্ট ছবি (রেডিমেড কার্ড)')}
-                    </label>
-                    <input
-                      type="text"
-                      value={homepageForm.frontProductImage || ''}
-                      onChange={(e) => setHomepageForm({ ...homepageForm, frontProductImage: e.target.value })}
-                      className="w-full px-3 py-2 bg-[#FFFDF9] dark:bg-[#221216] border border-[#E5D8C8] dark:border-[#3D1B22] rounded-lg text-xs font-mono"
-                      placeholder="Image URL..."
-                    />
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleHomepageFrontProductUpload}
-                        className="hidden"
-                        id="homepage-front-product-upload"
-                      />
-                      <label
-                        htmlFor="homepage-front-product-upload"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F3E9DD] dark:bg-[#2A141A] text-[#801921] dark:text-[#F4D6DC] font-bold text-xs border border-[#E5D8C8] cursor-pointer transition"
-                      >
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>{t('Upload Product Image', 'ছবি আপলোড করুন')}</span>
+                  {/* Product & Fabric Sliders Button Labels */}
+                  <div className="p-4 bg-[#FAF5EE] dark:bg-[#180C0F] rounded-xl border border-[#E5D8C8] dark:border-[#3D1B22] space-y-4">
+                    
+                    {/* Ready-Made Product Slider Button */}
+                    <div className="space-y-2">
+                      <label className="font-bold text-xs text-[#801921] dark:text-amber-400 block">
+                        {t('Product Slider Explore Button Label', 'রেডিমেড স্লাইডার এক্সপ্লোর বাটন লেখা')}
                       </label>
-                      {homepageForm.frontProductImage && (
-                        <div className="w-10 h-10 rounded-lg overflow-hidden border border-stone-300">
-                          <img src={homepageForm.frontProductImage} alt="Front Product" className="w-full h-full object-cover" />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 block mb-1">
+                            {t('Button Label (English)', 'বাটনের লেখা (ইংরেজি)')}
+                          </label>
+                          <input
+                            type="text"
+                            value={homepageForm.productSliderButtonText || homepageForm.sliderButtonText || 'Explore All Products'}
+                            onChange={(e) => setHomepageForm({ ...homepageForm, productSliderButtonText: e.target.value })}
+                            className="w-full px-3 py-2 bg-[#FFFDF9] dark:bg-[#221216] border border-[#E5D8C8] dark:border-[#3D1B22] rounded-lg text-xs font-semibold"
+                            placeholder="e.g. Explore All Products"
+                          />
                         </div>
-                      )}
+                        <div>
+                          <label className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 block mb-1">
+                            {t('Button Label (Bengali)', 'বাটনের লেখা (বাংলা)')}
+                          </label>
+                          <input
+                            type="text"
+                            value={homepageForm.bengaliProductSliderButtonText || homepageForm.bengaliSliderButtonText || 'সব রেডিমেড কালেকশন দেখুন'}
+                            onChange={(e) => setHomepageForm({ ...homepageForm, bengaliProductSliderButtonText: e.target.value })}
+                            className="w-full px-3 py-2 bg-[#FFFDF9] dark:bg-[#221216] border border-[#E5D8C8] dark:border-[#3D1B22] rounded-lg text-xs font-semibold"
+                            placeholder="যেমন: সব রেডিমেড কালেকশন দেখুন"
+                          />
+                        </div>
+                      </div>
                     </div>
+
+                    <div className="border-t border-[#E5D8C8] dark:border-[#3D1B22] pt-3" />
+
+                    {/* Fabric Slider Button */}
+                    <div className="space-y-2">
+                      <label className="font-bold text-xs text-[#801921] dark:text-amber-400 block">
+                        {t('Fabric Slider Explore Button Label', 'থান কাপড় স্লাইডার এক্সপ্লোর বাটন লেখা')}
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 block mb-1">
+                            {t('Button Label (English)', 'বাটনের লেখা (ইংরেজি)')}
+                          </label>
+                          <input
+                            type="text"
+                            value={homepageForm.fabricSliderButtonText || 'Explore All Fabrics'}
+                            onChange={(e) => setHomepageForm({ ...homepageForm, fabricSliderButtonText: e.target.value })}
+                            className="w-full px-3 py-2 bg-[#FFFDF9] dark:bg-[#221216] border border-[#E5D8C8] dark:border-[#3D1B22] rounded-lg text-xs font-semibold"
+                            placeholder="e.g. Explore All Fabrics"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 block mb-1">
+                            {t('Button Label (Bengali)', 'বাটনের লেখা (বাংলা)')}
+                          </label>
+                          <input
+                            type="text"
+                            value={homepageForm.bengaliFabricSliderButtonText || 'সব থান কাপড় ক্যাটালগ দেখুন'}
+                            onChange={(e) => setHomepageForm({ ...homepageForm, bengaliFabricSliderButtonText: e.target.value })}
+                            className="w-full px-3 py-2 bg-[#FFFDF9] dark:bg-[#221216] border border-[#E5D8C8] dark:border-[#3D1B22] rounded-lg text-xs font-semibold"
+                            placeholder="যেমন: সব থান কাপড় ক্যাটালগ দেখুন"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
 
-                  {/* Front Fabric Image */}
-                  <div className="space-y-2 p-3 bg-[#FAF5EE] dark:bg-[#180C0F] rounded-xl border border-[#E5D8C8] dark:border-[#3D1B22]">
-                    <label className="font-bold text-xs text-[#331A1E] dark:text-[#F7EBE8] block">
-                      {t('Front Fabric Image (Fabric Catalog Card)', 'ফ্রন্ট ফ্যাব্রিক ছবি (ফ্যাব্রিক ক্যাটালগ কার্ড)')}
-                    </label>
-                    <input
-                      type="text"
-                      value={homepageForm.frontFabricImage || ''}
-                      onChange={(e) => setHomepageForm({ ...homepageForm, frontFabricImage: e.target.value })}
-                      className="w-full px-3 py-2 bg-[#FFFDF9] dark:bg-[#221216] border border-[#E5D8C8] dark:border-[#3D1B22] rounded-lg text-xs font-mono"
-                      placeholder="Image URL..."
-                    />
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleHomepageFrontFabricUpload}
-                        className="hidden"
-                        id="homepage-front-fabric-upload"
-                      />
-                      <label
-                        htmlFor="homepage-front-fabric-upload"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F3E9DD] dark:bg-[#2A141A] text-[#801921] dark:text-[#F4D6DC] font-bold text-xs border border-[#E5D8C8] cursor-pointer transition"
-                      >
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>{t('Upload Fabric Image', 'ছবি আপলোড করুন')}</span>
-                      </label>
-                      {homepageForm.frontFabricImage && (
-                        <div className="w-10 h-10 rounded-lg overflow-hidden border border-stone-300">
-                          <img src={homepageForm.frontFabricImage} alt="Front Fabric" className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                    </div>
                   </div>
-
-                </div>
 
                 {/* Tailoring Craft Showcase Photos Card (3 Items) */}
                 <div className="bg-[#FFFDF9] dark:bg-[#221216] p-6 rounded-2xl border border-[#E5D8C8] dark:border-[#3D1B22] shadow-sm space-y-4">
