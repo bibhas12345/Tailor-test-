@@ -257,8 +257,8 @@ export const AdminPanel: React.FC = () => {
     if (!success) {
       setLoginError(
         t(
-          'Invalid credentials! Hint: Use ID "test" and Password "1234".',
-          'ভুল আইডি বা পাসওয়ার্ড! সঠিক আইডি: test এবং পাসওয়ার্ড: 1234'
+          'Invalid credentials!',
+          'ভুল আইডি বা পাসওয়ার্ড!'
         )
       );
     }
