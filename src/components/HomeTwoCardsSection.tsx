@@ -90,8 +90,8 @@ export const HomeTwoCardsSection: React.FC = () => {
   const fabricItems = useMemo(() => {
     const rawFabrics = (fabrics || []).slice(0, 4).map((f) => ({
       id: f.id,
-      badgeEn: `Pure Fabric • ${f.origin || 'Bengal'}`,
-      badgeBn: `থান কাপড় • ${f.bengaliName || f.name}`,
+      badgeEn: 'Pure Fabric',
+      badgeBn: 'পিওর ফ্যাব্রিক',
       image: f.textureImage,
       titleEn: f.name,
       titleBn: f.bengaliName || f.name,
