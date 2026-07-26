@@ -34,8 +34,8 @@ export const HomeTwoCardsSection: React.FC = () => {
       },
       {
         key: 'others',
-        badgeEn: 'Ready Made • Dupatta & Textiles',
-        badgeBn: 'রেডিমেড • ওড়না ও টেক্সটাইল',
+        badgeEn: 'Ready Made • Others',
+        badgeBn: 'রেডিমেড • অন্যান্য',
         finder: (p) =>
           p.category === 'others' ||
           !['nighty', 'kurti', 'traditional', 'bedsheet'].includes(p.category),
