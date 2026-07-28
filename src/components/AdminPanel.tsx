@@ -2060,9 +2060,10 @@ export const AdminPanel: React.FC = () => {
 
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-[#801921] hover:bg-[#991D26] text-white font-bold shadow-md"
+                    disabled={uploadingSlot !== null}
+                    className="px-6 py-2.5 rounded-xl bg-[#801921] hover:bg-[#991D26] disabled:opacity-50 text-white font-bold shadow-md"
                   >
-                    {t('Save Dress Details', 'পোশাক সেভ করুন')}
+                    {uploadingSlot !== null ? t('Uploading Image...', 'ছবি আপলোড হচ্ছে...') : t('Save Dress Details', 'পোশাক সেভ করুন')}
                   </button>
                 </div>
               </form>
@@ -2356,9 +2357,10 @@ export const AdminPanel: React.FC = () => {
 
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-[#801921] hover:bg-[#991D26] text-white font-bold shadow-md"
+                    disabled={uploadingSlot !== null}
+                    className="px-6 py-2.5 rounded-xl bg-[#801921] hover:bg-[#991D26] disabled:opacity-50 text-white font-bold shadow-md"
                   >
-                    {t('Save Fabric Details', 'ফ্যাব্রিক সেভ করুন')}
+                    {uploadingSlot !== null ? t('Uploading Image...', 'ছবি আপলোড হচ্ছে...') : t('Save Fabric Details', 'ফ্যাব্রিক সেভ করুন')}
                   </button>
                 </div>
               </form>
