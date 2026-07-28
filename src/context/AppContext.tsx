@@ -269,14 +269,9 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
   return clean;
 }
 
-  // Subscribe to Products collection in Firestore (with 15 min TTL cache for customers)
+  // Subscribe to Products collection in Firestore (real-time for everyone)
   useEffect(() => {
     const cacheKey = 'pal_tailors_products';
-    const hasCache = !!localStorage.getItem(cacheKey);
-
-    if (!isAdminLoggedIn && hasCache && isCacheValid(cacheKey)) {
-      return;
-    }
 
     const productsRef = collection(db, 'products');
     const unsubscribe = onSnapshot(productsRef, (snapshot) => {
@@ -289,7 +284,26 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
         setProducts(items);
         saveToCache(cacheKey, items);
       } else {
-        // Seed initial products to Firestore
+        // If Firestore collection is empty, check if we have custom products in localStorage first
+        const saved = localStorage.getItem(cacheKey);
+        if (saved) {
+          try {
+            const cachedItems: Product[] = JSON.parse(saved);
+            if (cachedItems && cachedItems.length > 0) {
+              // Seed cached items to Firestore so admin's added products are preserved
+              cachedItems.forEach((prod) => {
+                const cleanProd = sanitizeFirestoreData(prod);
+                setDoc(doc(db, 'products', prod.id), cleanProd).catch((err) =>
+                  console.error('Error seeding product from cache:', err)
+                );
+              });
+              setProducts(cachedItems);
+              return;
+            }
+          } catch (e) {}
+        }
+
+        // Seed initial default products to Firestore
         PRODUCTS_DATA.forEach((prod) => {
           const cleanProd = sanitizeFirestoreData(prod);
           setDoc(doc(db, 'products', prod.id), cleanProd).catch((err) =>
@@ -314,16 +328,11 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     });
 
     return () => unsubscribe();
-  }, [isAdminLoggedIn, cacheTick]);
+  }, []);
 
-  // Subscribe to Fabrics collection in Firestore (with 15 min TTL cache for customers)
+  // Subscribe to Fabrics collection in Firestore (real-time for everyone)
   useEffect(() => {
     const cacheKey = 'pal_tailors_fabrics';
-    const hasCache = !!localStorage.getItem(cacheKey);
-
-    if (!isAdminLoggedIn && hasCache && isCacheValid(cacheKey)) {
-      return;
-    }
 
     const fabricsRef = collection(db, 'fabrics');
     const unsubscribe = onSnapshot(fabricsRef, (snapshot) => {
@@ -336,7 +345,26 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
         setFabrics(items);
         saveToCache(cacheKey, items);
       } else {
-        // Seed initial fabrics to Firestore
+        // If Firestore collection is empty, check if we have custom fabrics in localStorage first
+        const saved = localStorage.getItem(cacheKey);
+        if (saved) {
+          try {
+            const cachedItems: Fabric[] = JSON.parse(saved);
+            if (cachedItems && cachedItems.length > 0) {
+              // Seed cached items to Firestore so admin's added fabrics are preserved
+              cachedItems.forEach((fab) => {
+                const cleanFab = sanitizeFirestoreData(fab);
+                setDoc(doc(db, 'fabrics', fab.id), cleanFab).catch((err) =>
+                  console.error('Error seeding fabric from cache:', err)
+                );
+              });
+              setFabrics(cachedItems);
+              return;
+            }
+          } catch (e) {}
+        }
+
+        // Seed initial default fabrics to Firestore
         FABRICS_DATA.forEach((fab) => {
           const cleanFab = sanitizeFirestoreData(fab);
           setDoc(doc(db, 'fabrics', fab.id), cleanFab).catch((err) =>
@@ -361,7 +389,7 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
     });
 
     return () => unsubscribe();
-  }, [isAdminLoggedIn, cacheTick]);
+  }, []);
 
   // Admin Auth
   const adminLogin = (id: string, pass: string): boolean => {

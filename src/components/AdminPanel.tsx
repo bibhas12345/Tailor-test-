@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { storage } from '../lib/firebase';
 import { useApp } from '../context/AppContext';
 import { Product, Fabric, HomepageSettings, formatFabricPrice } from '../types';
 import {
@@ -28,6 +30,7 @@ import {
   Phone,
   Sparkles,
   Award,
+  Loader2,
 } from 'lucide-react';
 
 export const AdminPanel: React.FC = () => {
@@ -50,6 +53,9 @@ export const AdminPanel: React.FC = () => {
     openImageZoom,
     t,
   } = useApp();
+
+  // State for image upload progress indicator
+  const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
 
   // Login form state
   const [adminIdInput, setAdminIdInput] = useState('');
@@ -264,7 +270,7 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
-  // File to Base64 compressed reader helper - Auto compresses image to max 900px canvas JPEG so Firestore syncs instantly!
+  // File to Storage URL helper - Compresses canvas JPEG & automatically uploads to Firebase Storage
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
     type: 'product' | 'fabric' | 'product_additional' | 'fabric_additional',
@@ -273,14 +279,17 @@ export const AdminPanel: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const slotKey = `${type}_${slotIndex ?? 0}`;
+    setUploadingSlot(slotKey);
+
     const reader = new FileReader();
     reader.onloadend = () => {
       const rawDataUrl = reader.result as string;
       
       const img = new Image();
-      img.onload = () => {
+      img.onload = async () => {
         const canvas = document.createElement('canvas');
-        const MAX_DIM = 900;
+        const MAX_DIM = 800;
         let width = img.width;
         let height = img.height;
 
@@ -296,33 +305,47 @@ export const AdminPanel: React.FC = () => {
           }
         }
 
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = Math.round(width);
+        canvas.height = Math.round(height);
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.82);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+
+          // Upload compressed file to Firebase Storage to get a lightweight URL
+          let finalImageUrl = compressedDataUrl;
+          try {
+            const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+            const storagePath = `uploads/${Date.now()}_${cleanFileName || 'photo.jpg'}`;
+            const storageRef = ref(storage, storagePath);
+            await uploadString(storageRef, compressedDataUrl, 'data_url');
+            finalImageUrl = await getDownloadURL(storageRef);
+            console.log('Successfully uploaded image to Firebase Storage URL:', finalImageUrl);
+          } catch (storageErr) {
+            console.warn('Firebase Storage upload notice (using fallback):', storageErr);
+          }
 
           if (type === 'product') {
-            setProductForm((prev) => ({ ...prev, image: compressed }));
-            setProductImagePreview(compressed);
+            setProductForm((prev) => ({ ...prev, image: finalImageUrl }));
+            setProductImagePreview(finalImageUrl);
           } else if (type === 'fabric') {
-            setFabricForm((prev) => ({ ...prev, textureImage: compressed }));
-            setFabricImagePreview(compressed);
+            setFabricForm((prev) => ({ ...prev, textureImage: finalImageUrl }));
+            setFabricImagePreview(finalImageUrl);
           } else if (type === 'product_additional' && slotIndex !== undefined) {
             setProductForm((prev) => {
               const list = [...(prev.additionalImages || [])];
-              list[slotIndex] = compressed;
+              list[slotIndex] = finalImageUrl;
               return { ...prev, additionalImages: list };
             });
           } else if (type === 'fabric_additional' && slotIndex !== undefined) {
             setFabricForm((prev) => {
               const list = [...(prev.additionalImages || [])];
-              list[slotIndex] = compressed;
+              list[slotIndex] = finalImageUrl;
               return { ...prev, additionalImages: list };
             });
           }
         }
+        setUploadingSlot(null);
       };
       img.src = rawDataUrl;
     };
@@ -1818,8 +1841,17 @@ export const AdminPanel: React.FC = () => {
                           htmlFor="product-file-upload"
                           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F3E9DD] dark:bg-[#2A141A] hover:bg-[#EBE0D2] text-[#801921] dark:text-[#F4D6DC] font-bold text-xs border border-[#E5D8C8] dark:border-[#4A202A] cursor-pointer transition"
                         >
-                          <Upload className="w-4 h-4 text-[#801921]" />
-                          <span>{t('Upload Photo from Phone / PC', 'ফোন বা কম্পিউটার থেকে ছবি আপলোড করুন')}</span>
+                          {uploadingSlot === 'product_0' ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin text-[#801921] dark:text-amber-400" />
+                              <span>{t('Uploading to Storage...', 'স্টোরেজে আপলোড হচ্ছে...')}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 text-[#801921]" />
+                              <span>{t('Upload Photo from Phone / PC', 'ফোন বা কম্পিউটার থেকে ছবি আপলোড করুন')}</span>
+                            </>
+                          )}
                         </label>
                       </div>
                     </div>
@@ -1919,8 +1951,17 @@ export const AdminPanel: React.FC = () => {
                                   htmlFor={`prod-file-upload-${slotIdx}`}
                                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#801921]/10 dark:bg-amber-400/10 hover:bg-[#801921]/20 text-[#801921] dark:text-amber-300 font-bold text-[10px] cursor-pointer transition"
                                 >
-                                  <Upload className="w-3 h-3" />
-                                  <span>{t('Upload File', 'ছবি আপলোড')}</span>
+                                  {uploadingSlot === `product_additional_${slotIdx}` ? (
+                                    <>
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                      <span>{t('Uploading...', 'আপলোড হচ্ছে...')}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Upload className="w-3 h-3" />
+                                      <span>{t('Upload File', 'ছবি আপলোড')}</span>
+                                    </>
+                                  )}
                                 </label>
                               </div>
                             </div>
@@ -2139,8 +2180,17 @@ export const AdminPanel: React.FC = () => {
                           htmlFor="fabric-file-upload"
                           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F3E9DD] dark:bg-[#2A141A] hover:bg-[#EBE0D2] text-[#801921] dark:text-[#F4D6DC] font-bold text-xs border border-[#E5D8C8] dark:border-[#4A202A] cursor-pointer transition"
                         >
-                          <Upload className="w-4 h-4 text-[#801921]" />
-                          <span>{t('Upload Texture Photo', 'টেক্সচার ছবি আপলোড করুন')}</span>
+                          {uploadingSlot === 'fabric_0' ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin text-[#801921] dark:text-amber-400" />
+                              <span>{t('Uploading to Storage...', 'স্টোরেজে আপলোড হচ্ছে...')}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 text-[#801921]" />
+                              <span>{t('Upload Texture Photo', 'টেক্সচার ছবি আপলোড করুন')}</span>
+                            </>
+                          )}
                         </label>
                       </div>
                     </div>
@@ -2240,8 +2290,17 @@ export const AdminPanel: React.FC = () => {
                                   htmlFor={`fab-file-upload-${slotIdx}`}
                                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#801921]/10 dark:bg-amber-400/10 hover:bg-[#801921]/20 text-[#801921] dark:text-amber-300 font-bold text-[10px] cursor-pointer transition"
                                 >
-                                  <Upload className="w-3 h-3" />
-                                  <span>{t('Upload File', 'ছবি আপলোড')}</span>
+                                  {uploadingSlot === `fabric_additional_${slotIdx}` ? (
+                                    <>
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                      <span>{t('Uploading...', 'আপলোড হচ্ছে...')}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Upload className="w-3 h-3" />
+                                      <span>{t('Upload File', 'ছবি আপলোড')}</span>
+                                    </>
+                                  )}
                                 </label>
                               </div>
                             </div>
