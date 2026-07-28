@@ -270,7 +270,7 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
-  // File to Storage URL helper - Compresses canvas JPEG & automatically uploads to Firebase Storage
+  // File to Storage URL helper - Compresses canvas JPEG & uploads with fast fallback
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
     type: 'product' | 'fabric' | 'product_additional' | 'fabric_additional',
@@ -288,41 +288,55 @@ export const AdminPanel: React.FC = () => {
       
       const img = new Image();
       img.onload = async () => {
-        const canvas = document.createElement('canvas');
-        const MAX_DIM = 800;
-        let width = img.width;
-        let height = img.height;
+        try {
+          const canvas = document.createElement('canvas');
+          const MAX_DIM = 800;
+          let width = img.width;
+          let height = img.height;
 
-        if (width > height) {
-          if (width > MAX_DIM) {
-            height *= MAX_DIM / width;
-            width = MAX_DIM;
+          if (width > height) {
+            if (width > MAX_DIM) {
+              height *= MAX_DIM / width;
+              width = MAX_DIM;
+            }
+          } else {
+            if (height > MAX_DIM) {
+              width *= MAX_DIM / height;
+              height = MAX_DIM;
+            }
           }
-        } else {
-          if (height > MAX_DIM) {
-            width *= MAX_DIM / height;
-            height = MAX_DIM;
-          }
-        }
 
-        canvas.width = Math.round(width);
-        canvas.height = Math.round(height);
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
+          canvas.width = Math.round(width);
+          canvas.height = Math.round(height);
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+          // High quality, ultra-compact compressed JPEG (~35KB - 60KB)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.72);
 
-          // Upload compressed file to Firebase Storage to get a lightweight URL
           let finalImageUrl = compressedDataUrl;
+
+          // Attempt Firebase Storage with a strict 2.5 second timeout race
           try {
             const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
             const storagePath = `uploads/${Date.now()}_${cleanFileName || 'photo.jpg'}`;
             const storageRef = ref(storage, storagePath);
-            await uploadString(storageRef, compressedDataUrl, 'data_url');
-            finalImageUrl = await getDownloadURL(storageRef);
-            console.log('Successfully uploaded image to Firebase Storage URL:', finalImageUrl);
+
+            const uploadTask = (async () => {
+              await uploadString(storageRef, compressedDataUrl, 'data_url');
+              return await getDownloadURL(storageRef);
+            })();
+
+            const timeoutPromise = new Promise<string>((_, reject) =>
+              setTimeout(() => reject(new Error('Storage upload timeout')), 2500)
+            );
+
+            finalImageUrl = await Promise.race([uploadTask, timeoutPromise]);
+            console.log('Uploaded image to Storage:', finalImageUrl);
           } catch (storageErr) {
-            console.warn('Firebase Storage upload notice (using fallback):', storageErr);
+            console.warn('Storage unavailable or timed out, using compressed JPEG fallback:', storageErr);
+            finalImageUrl = compressedDataUrl;
           }
 
           if (type === 'product') {
@@ -344,8 +358,11 @@ export const AdminPanel: React.FC = () => {
               return { ...prev, additionalImages: list };
             });
           }
+        } catch (err) {
+          console.error('Error processing image upload:', err);
+        } finally {
+          setUploadingSlot(null);
         }
-        setUploadingSlot(null);
       };
       img.src = rawDataUrl;
     };
