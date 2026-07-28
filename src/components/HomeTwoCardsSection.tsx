@@ -56,7 +56,7 @@ export const HomeTwoCardsSection: React.FC = () => {
     }[] = [];
 
     for (const cat of categories) {
-      const foundProd = products.find(cat.finder);
+      const foundProd = [...products].reverse().find(cat.finder);
       if (foundProd) {
         items.push({
           id: foundProd.id,

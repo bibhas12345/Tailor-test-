@@ -290,7 +290,7 @@ export const AdminPanel: React.FC = () => {
       img.onload = async () => {
         try {
           const canvas = document.createElement('canvas');
-          const MAX_DIM = 800;
+          const MAX_DIM = 600;
           let width = img.width;
           let height = img.height;
 
@@ -312,8 +312,8 @@ export const AdminPanel: React.FC = () => {
           if (!ctx) return;
 
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          // High quality, ultra-compact compressed JPEG (~35KB - 60KB)
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+          // High quality, ultra-lightweight compressed JPEG (~20KB - 35KB)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.65);
 
           let finalImageUrl = compressedDataUrl;
 

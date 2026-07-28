@@ -409,7 +409,12 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
   // Product CRUD via Firestore + LocalStorage fallback
   const updateProduct = async (updated: Product) => {
     const clean = sanitizeFirestoreData(updated);
-    await setDoc(doc(db, 'products', updated.id), clean, { merge: true });
+    try {
+      await setDoc(doc(db, 'products', updated.id), clean, { merge: true });
+    } catch (err) {
+      console.error('Firestore setDoc updateProduct error:', err);
+      throw err;
+    }
     setProducts((prev) => {
       const exists = prev.some((p) => p.id === updated.id);
       const next = exists ? prev.map((p) => (p.id === updated.id ? updated : p)) : [updated, ...prev];
@@ -421,7 +426,12 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
 
   const addProduct = async (newProd: Product) => {
     const clean = sanitizeFirestoreData(newProd);
-    await setDoc(doc(db, 'products', newProd.id), clean);
+    try {
+      await setDoc(doc(db, 'products', newProd.id), clean);
+    } catch (err) {
+      console.error('Firestore setDoc addProduct error:', err);
+      throw err;
+    }
     setProducts((prev) => {
       const filtered = prev.filter((p) => p.id !== newProd.id);
       const next = [newProd, ...filtered];
@@ -432,7 +442,12 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
   };
 
   const deleteProduct = async (id: string) => {
-    await deleteDoc(doc(db, 'products', id));
+    try {
+      await deleteDoc(doc(db, 'products', id));
+    } catch (err) {
+      console.error('Firestore deleteDoc product error:', err);
+      throw err;
+    }
     setProducts((prev) => {
       const next = prev.filter((p) => p.id !== id);
       saveToCache('pal_tailors_products', next);
@@ -448,7 +463,12 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
       isSoldOut: nextIsSoldOut,
       inStock: !nextIsSoldOut,
     };
-    await updateDoc(doc(db, 'products', id), updatedFields);
+    try {
+      await updateDoc(doc(db, 'products', id), updatedFields);
+    } catch (err) {
+      console.error('Firestore updateDoc toggleProductSoldOut error:', err);
+      throw err;
+    }
     setProducts((prev) => {
       const next = prev.map((p) => (p.id === id ? { ...p, ...updatedFields } : p));
       saveToCache('pal_tailors_products', next);
@@ -459,7 +479,12 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
   // Fabric CRUD via Firestore + LocalStorage fallback
   const updateFabric = async (updated: Fabric) => {
     const clean = sanitizeFirestoreData(updated);
-    await setDoc(doc(db, 'fabrics', updated.id), clean, { merge: true });
+    try {
+      await setDoc(doc(db, 'fabrics', updated.id), clean, { merge: true });
+    } catch (err) {
+      console.error('Firestore setDoc updateFabric error:', err);
+      throw err;
+    }
     setFabrics((prev) => {
       const exists = prev.some((f) => f.id === updated.id);
       const next = exists ? prev.map((f) => (f.id === updated.id ? updated : f)) : [updated, ...prev];
@@ -471,7 +496,12 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
 
   const addFabric = async (newFab: Fabric) => {
     const clean = sanitizeFirestoreData(newFab);
-    await setDoc(doc(db, 'fabrics', newFab.id), clean);
+    try {
+      await setDoc(doc(db, 'fabrics', newFab.id), clean);
+    } catch (err) {
+      console.error('Firestore setDoc addFabric error:', err);
+      throw err;
+    }
     setFabrics((prev) => {
       const filtered = prev.filter((f) => f.id !== newFab.id);
       const next = [newFab, ...filtered];
@@ -482,12 +512,22 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
   };
 
   const deleteFabric = async (id: string) => {
-    await deleteDoc(doc(db, 'fabrics', id));
+    try {
+      await deleteDoc(doc(db, 'fabrics', id));
+    } catch (err) {
+      console.error('Firestore deleteDoc fabric error:', err);
+      throw err;
+    }
     setFabrics((prev) => {
       const next = prev.filter((f) => f.id !== id);
       saveToCache('pal_tailors_fabrics', next);
       return next;
     });
+    try {
+      await deleteDoc(doc(db, 'fabrics', id));
+    } catch (err) {
+      console.error('Firestore deleteDoc fabric error:', err);
+    }
   };
 
   const toggleFabricSoldOut = async (id: string) => {
@@ -498,12 +538,16 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
       isSoldOut: nextIsSoldOut,
       inStock: !nextIsSoldOut,
     };
-    await updateDoc(doc(db, 'fabrics', id), updatedFields);
     setFabrics((prev) => {
       const next = prev.map((f) => (f.id === id ? { ...f, ...updatedFields } : f));
       saveToCache('pal_tailors_fabrics', next);
       return next;
     });
+    try {
+      await updateDoc(doc(db, 'fabrics', id), updatedFields);
+    } catch (err) {
+      console.error('Firestore updateDoc toggleFabricSoldOut error:', err);
+    }
   };
 
   const resetCatalogToDefaults = async () => {
