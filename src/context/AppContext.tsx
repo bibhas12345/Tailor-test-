@@ -207,14 +207,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return FABRICS_DATA;
   });
 
-  // Subscribe to Homepage Settings in Firestore (with 15 min TTL cache for customers)
+  // Subscribe to Homepage Settings in Firestore (real-time for all devices)
   useEffect(() => {
     const cacheKey = 'pal_tailors_homepage_settings';
-    const hasCache = !!localStorage.getItem(cacheKey);
-
-    if (!isAdminLoggedIn && hasCache && isCacheValid(cacheKey)) {
-      return;
-    }
 
     const settingsDocRef = doc(db, 'settings', 'homepage');
     const unsubscribe = onSnapshot(settingsDocRef, (docSnap) => {
@@ -238,7 +233,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     return () => unsubscribe();
-  }, [isAdminLoggedIn, cacheTick]);
+  }, [isAdminLoggedIn]);
 
   const updateHomepageSettings = async (updated: HomepageSettings) => {
     setHomepageSettings(updated);
@@ -280,7 +275,12 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
         snapshot.forEach((docSnap) => {
           items.push({ ...docSnap.data(), id: docSnap.id } as Product);
         });
-        items.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+        items.sort((a, b) => {
+          const orderA = Number(a.displayOrder) || 9999;
+          const orderB = Number(b.displayOrder) || 9999;
+          if (orderA !== orderB) return orderA - orderB;
+          return (a.id || '').localeCompare(b.id || '');
+        });
         setProducts(items);
         saveToCache(cacheKey, items);
       } else {
@@ -341,7 +341,12 @@ function sanitizeFirestoreData<T extends Record<string, any>>(obj: T): Record<st
         snapshot.forEach((docSnap) => {
           items.push({ ...docSnap.data(), id: docSnap.id } as Fabric);
         });
-        items.sort((a, b) => (Number(a.displayOrder) || 9999) - (Number(b.displayOrder) || 9999));
+        items.sort((a, b) => {
+          const orderA = Number(a.displayOrder) || 9999;
+          const orderB = Number(b.displayOrder) || 9999;
+          if (orderA !== orderB) return orderA - orderB;
+          return (a.id || '').localeCompare(b.id || '');
+        });
         setFabrics(items);
         saveToCache(cacheKey, items);
       } else {
